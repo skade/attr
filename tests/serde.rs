@@ -3,6 +3,7 @@ extern crate kv_access;
 
 use serde_json as json;
 use serde_json::value::Value;
+use kv_access::IndexableAttr;
 
 use kv_access::Attr;
 use kv_access::serde_impl::SerdeAttribute;

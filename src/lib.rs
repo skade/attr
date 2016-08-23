@@ -13,6 +13,10 @@ pub trait Attr<Type: ?Sized> {
     fn get<'a>(&self, i: &'a Type) -> &'a Self::Output;
 }
 
+pub trait Attributes<AttributeType> {
+    fn attrs() -> AttributeType;
+}
+
 pub trait AttrMut<Type: ?Sized> : Attr<Type> {
     fn get_mut<'a>(&self, i: &'a mut Type) -> &'a mut Self::Output;
 }

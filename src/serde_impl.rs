@@ -1,6 +1,8 @@
 use serde_json::value::Value;
 use super::Attr;
 use super::AttrMut;
+use std::ops::Index;
+use super::IndexableAttr;
 
 pub struct SerdeAttribute<'a> {
     name: &'a str

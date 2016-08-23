@@ -2,6 +2,7 @@ extern crate kv_access;
 
 use kv_access::Attr;
 use kv_access::AttrMut;
+use kv_access::Attributes;
 
 pub struct Foo {
     bar: String,
@@ -10,8 +11,22 @@ pub struct Foo {
 
 #[test]
 fn simple_access() {
+    #[derive(Default)]
     struct Bar;
+    #[derive(Default)]
     struct Batz;
+
+    #[derive(Default)]
+    struct FooAttributes {
+        bar: Bar,
+        batz: Batz
+    }
+
+    impl Attributes<FooAttributes> for Foo {
+        fn attrs() -> FooAttributes {
+            FooAttributes::default()
+        }
+    }
 
     impl Attr<Foo> for Bar {
         type Output = String;
@@ -50,7 +65,7 @@ fn simple_access() {
     }
 
     let f = Foo { bar: "foobar".into(), batz: 20 };
-    Bar.get(&f);
-    Batz.get(&f);
+    Foo::attrs().bar.get(&f);
+    Foo::attrs().batz.get(&f);
 
 }
