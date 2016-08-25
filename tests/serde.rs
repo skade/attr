@@ -13,12 +13,13 @@ use kv_access::serde_impl::SerdeAttribute;
 
 #[test]
 fn test_attr() {
-    let obj: Value = json::from_str(r#"{"x": 1}"#).unwrap();
+    let obj: Value = json::from_str(r#"{"x": 1, "y": [1,2,3] }"#).unwrap();
 
-    let attr = SerdeAttribute::new("x");
+    let attr_x = SerdeAttribute::new("x");
+    let attr_y = SerdeAttribute::new("y");
 
-    println!("{:?}", attr.get(&obj));
-    assert_eq!(attr.get(&obj), &Value::U64(1));
+    assert_eq!(attr_x.get(&obj), &Value::U64(1));
+    assert_eq!(attr_y.at(&obj, 1), &Value::U64(2));
 }
 
 struct Foo {
@@ -60,7 +61,6 @@ fn test_combine() {
     let attr = SerdeAttribute::new("x");
 
     let c = Combiner::combine(Foo::attrs().inner, attr);
-
 
     println!("{:?}", c.get(&obj));
     assert_eq!(c.get(&obj), &Value::U64(1));

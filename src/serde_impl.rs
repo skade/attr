@@ -3,6 +3,7 @@ use super::Attr;
 use super::AttrMut;
 use std::ops::Index;
 use super::IndexableAttr;
+use super::IndexableAttrMut;
 
 pub struct SerdeAttribute<'a> {
     name: &'a str
@@ -38,12 +39,26 @@ impl<'a> AttrMut<Value> for SerdeAttribute<'a> {
     }
 }
 
-//impl<'a, 'b : 'a, Idx, A: Attr<Value, Output=Value>> IndexableAttr<'a, 'b, Value, Idx> for A {
-//    fn at(&self, i: &'b Value, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Value, Idx>>::Output {
-//        let v = self.get(i);
-//        match v {
-//            &Value::Array(ref vec) => { vec[idx] },
-//            _ => panic!("at on a non-array")
-//        }
-//    }
-//}
+impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Value, usize> for SerdeAttribute<'a> {
+    type Output = Value;
+
+    fn at(&self, i: &'b Value, idx: usize) -> &'a Value {
+        let v = self.get(i);
+        match v {
+            &Value::Array(ref vec) => { & vec[idx] },
+            _ => panic!("at on a non-array")
+        }
+    }
+}
+
+impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Value, usize> for SerdeAttribute<'a> {
+    type Output = Value;
+
+    fn at_mut(&self, i: &'b mut Value, idx: usize) -> &'a mut Value {
+        let v = self.get_mut(i);
+        match v {
+            &mut Value::Array(ref mut vec) => { &mut vec[idx] },
+            _ => panic!("at on a non-array")
+        }
+    }
+}
