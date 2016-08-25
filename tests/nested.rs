@@ -1,10 +1,12 @@
 extern crate kv_access;
 
-use kv_access::Combiner;
+use kv_access::Path;
 use kv_access::Combine;
 use kv_access::MutCombine;
 use kv_access::IndexableAttr;
 use kv_access::IndexableAttrMut;
+use kv_access::Traverse;
+use kv_access::ImmutablePathComponent;
 
 pub struct Foo {
     bar: String,
@@ -130,15 +132,17 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let c = Combiner::combine(foo::Batz, bla::Name);
-    c.get(&f);
+    let mut path = ImmutablePathComponent::new(bla::Name).prepend(foo::Batz);
+
+    let val: &String = path.traverse(&f);
+    assert_eq!(val, "foo");
 }
 
 #[test]
 fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let c = Combiner::combine(foo::Batz, bla::Name);
+    let c = Path::combine(foo::Batz, bla::Name);
     {
         let x = c.get_mut(&mut f);
         *x = "bar".into();

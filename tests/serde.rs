@@ -7,7 +7,7 @@ use kv_access::IndexableAttr;
 
 use kv_access::Attr;
 use kv_access::Attributes;
-use kv_access::Combiner;
+use kv_access::Path;
 use kv_access::Combine;
 use kv_access::serde_impl::SerdeAttribute;
 
@@ -60,7 +60,7 @@ fn test_combine() {
     let obj = Foo { inner: val };
     let attr = SerdeAttribute::new("x");
 
-    let c = Combiner::combine(Foo::attrs().inner, attr);
+    let c = Path::combine(Foo::attrs().inner, attr);
 
     println!("{:?}", c.get(&obj));
     assert_eq!(c.get(&obj), &Value::U64(1));

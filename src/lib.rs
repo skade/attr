@@ -3,8 +3,13 @@ extern crate serde_json;
 pub mod serde_impl;
 
 use std::marker::PhantomData;
-use std::ops::Index;
-use std::ops::IndexMut;
+use std::ops::Add;
+
+pub enum PathWalkError {
+    PathCut(String)
+}
+
+pub type PathWalkResult<T> = Result<T, PathWalkError>;
 
 pub trait Attr<Type: ?Sized> {
     type Output: ?Sized;
@@ -41,7 +46,63 @@ pub trait MutCombine<'a, 'b: 'a, X, A: AttrMut<X>, B: AttrMut<A::Output>> {
     fn get_mut(&self, i: &'b mut X) -> &'a mut B::Output;
 }
 
-pub struct Combiner<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> {
+pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Output=Z>> {
+    attr: A,
+    next: R,
+    phantomx: PhantomData<&'b X>,
+    phantomy: PhantomData<&'a Y>,
+    phantomz: PhantomData<&'a Z>
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y,Output=Z>> ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
+    pub fn new(attr: A) -> ImmutablePathComponent<'a, 'b, X, Y, Z, A, Identity> where Identity: Traverse<'a, 'b, Y, Output=Z>  {
+        ImmutablePathComponent {
+            attr: attr,
+            next: Identity,
+            phantomx: PhantomData,
+            phantomy: PhantomData,
+            phantomz: PhantomData
+        }
+    }
+
+    pub fn prepend<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePathComponent<'a, 'b, NX, NY, NZ, NA, ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>>
+        where NA: Attr<NX, Output=NY>,
+              ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, Output=NZ> {
+        ImmutablePathComponent {
+            attr: attr,
+            next: self,
+            phantomx: PhantomData,
+            phantomy: PhantomData,
+            phantomz: PhantomData
+        }
+    }
+}
+
+pub struct Identity;
+
+pub trait Traverse<'a, 'b: 'a, X> {
+    type Output;
+
+    fn traverse(&self, val: &'b X) -> &'a Self::Output;
+}
+
+impl<'a, 'b: 'a, T> Traverse<'a, 'b, T> for Identity {
+    type Output = T;
+
+    #[inline]
+    fn traverse(&self, val: &'b T) -> &'a Self::Output { val }
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Output=Z>> Traverse<'a, 'b, X> for ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
+    type Output = Z;
+
+    fn traverse(&self, obj: &'b X) -> &'a Self::Output {
+        let val = self.attr.get(obj);
+        self.next.traverse(val)
+    }
+}
+
+pub struct Path<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> {
     a: A,
     b: B,
     phantomx: PhantomData<&'b X>,
@@ -49,9 +110,9 @@ pub struct Combiner<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, B: At
     phantomz: PhantomData<&'a Z>
 }
 
-impl<'a, 'b, X, Y, Z, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> Combiner<'a, 'b, X, Y, Z, A, B> {
+impl<'a, 'b, X, Y, Z, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> Path<'a, 'b, X, Y, Z, A, B> {
     pub fn combine(a: A, b: B) -> Self {
-        Combiner {
+        Path {
             a: a,
             b: b,
             phantomx: PhantomData,
@@ -61,13 +122,13 @@ impl<'a, 'b, X, Y, Z, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> Combiner<'a, '
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y, Z: 'a, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> Combine<'a, 'b, X, A, B> for Combiner<'a, 'b, X, Y, Z, A, B> {
+impl<'a, 'b: 'a, X: 'b, Y, Z: 'a, A: Attr<X, Output=Y>, B: Attr<Y, Output=Z>> Combine<'a, 'b, X, A, B> for Path<'a, 'b, X, Y, Z, A, B> {
     fn get(&self, i: &'b X) -> &'a B::Output {
         self.b.get(self.a.get(i))
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y, Z: 'a, A: AttrMut<X, Output=Y>, B: AttrMut<Y, Output=Z>> MutCombine<'a, 'b, X, A, B> for Combiner<'a, 'b, X, Y, Z, A, B> {
+impl<'a, 'b: 'a, X: 'b, Y, Z: 'a, A: AttrMut<X, Output=Y>, B: AttrMut<Y, Output=Z>> MutCombine<'a, 'b, X, A, B> for Path<'a, 'b, X, Y, Z, A, B> {
     fn get_mut(&self, i: &'b mut X) -> &'a mut B::Output {
         self.b.get_mut(self.a.get_mut(i))
     }
