@@ -7,12 +7,14 @@ use kv_access::IndexableAttrMut;
 use kv_access::Traverse;
 use kv_access::TraverseMut;
 
+#[derive(Debug)]
 pub struct Foo {
     bar: String,
     batz: Bla,
     numbers: Vec<i32>
 }
 
+#[derive(Debug)]
 pub struct Bla {
     name: String
 }
@@ -171,4 +173,17 @@ fn nested_vec_mutable() {
     }
     let y = foo::Numbers.at(&f, 1);
     assert_eq!(*y, 4)
+}
+
+#[test]
+fn nested_filter() {
+    let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
+    let f2 = Foo { bar: "foobar".into(), batz: Bla { name: "bar".into() }, numbers: vec![1,2,3] };
+
+    let vec = vec![f, f2];
+    let path = retrieve(bla::Name).from(foo::Batz);
+
+    let filtered = vec.iter().filter(|foo| path.traverse(&foo) == "foo" ).collect::<Vec<_>>();
+
+    assert_eq!(filtered.len(), 1);
 }
