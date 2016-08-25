@@ -195,6 +195,8 @@ pub mod bla {
 
 * Unify mutable and immutable retrieval, if possible
 * Unify the retrieval interface between fields and paths, if possible
+* Make all parts return Results, so that walking may fail
+* More fancy path combinators!
 
 ## Bitten tongues
 
