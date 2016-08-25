@@ -1,25 +1,54 @@
-extern crate attr;
+# attr
 
-use attr::retrieve;
-use attr::retrieve_mut;
-use attr::IndexableAttr;
-use attr::IndexableAttrMut;
-use attr::Traverse;
-use attr::TraverseMut;
-use attr::Attributes;
+`attr` is a Library to provide external access to a datastructure through a
+typed path object, leveraging all type information known about the data
+structure at hand.
 
-#[derive(Debug)]
-pub struct Foo {
-    bar: String,
-    batz: Bla,
-    numbers: Vec<i32>
+This allows expressing queries on data structures not currently at hand without
+retrieving a handle on the data structure itself.
+
+It is currently in experimentation phase, but runs on stable and nightly.
+
+The current goal is to make the API convenient and uniform and the definition
+of all user-facing types easy to do by hand. Definitions are still rather
+verbose, but convenience macros and compiler plugins are currently not in scope
+(but maybe some soul more interested in those will provide one? ;) )
+
+As an example, an interface to the serde_json library is provided.
+
+## Example
+
+```rust
+fn edit_name() {
+    let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
+
+    let path = retrieve_mut(bla::Name).from(foo::Batz);
+
+    {
+        let x = path.traverse_mut(&mut f);
+        *x = "bar".into();
+    }
+    let path = retrieve(bla::Name).from(foo::Batz);
+
+    let y = path.traverse(&f);
+    assert_eq!(y, "bar");
 }
+```
 
-#[derive(Debug)]
-pub struct Bla {
-    name: String
-}
+The construction of the following path would fail with a type error:
 
+```rust
+retrieve_mut(foo::Batz).from(bla::Name);
+```
+
+## Underlying definitions
+
+The library works by defining an accessor struct implementing the `Attr<Type>`
+trait per access strategy. In this case, one per for every known field of the
+data structure. Defining those is currently busywork. In the case of Foo and Bar,
+the definition looks like follows. Field accessors get grouped into a seperate struct for convenience.
+
+```rust
 pub mod foo {
     use attr::Attr;
     use attr::AttrMut;
@@ -160,62 +189,13 @@ pub mod bla {
         }
     }
 }
+```
 
-#[test]
-fn nested_access() {
-    let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
+## Bitten tongues
 
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
-//    let mut path = new_path(bla::Name).prepend(foo::Bla); <-- this fails and should be made a compile-test \o/
+Nearly called that library lazr-pointer, because it is inteded to be used in the
+laze.rs project.
 
-    let val = path.traverse(&f);
-    assert_eq!(val, "foo");
-}
+## LICENSE
 
-#[test]
-fn nested_mutable() {
-    let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
-
-    let path = retrieve_mut(Bla::attrs().name).from(Foo::attrs().batz);
-
-    {
-        let x = path.traverse_mut(&mut f);
-        *x = "bar".into();
-    }
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
-
-    let y = path.traverse(&f);
-    assert_eq!(y, "bar");
-}
-
-#[test]
-fn nested_vec() {
-    let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
-    let x = foo::Numbers.at(&f, 1);
-
-    assert_eq!(*x, 2)
-}
-
-#[test]
-fn nested_vec_mutable() {
-    let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
-    {
-        let x = foo::Numbers.at_mut(&mut f, 1);
-        *x = 4;
-    }
-    let y = foo::Numbers.at(&f, 1);
-    assert_eq!(*y, 4)
-}
-
-#[test]
-fn nested_filter() {
-    let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
-    let f2 = Foo { bar: "foobar".into(), batz: Bla { name: "bar".into() }, numbers: vec![1,2,3] };
-
-    let vec = vec![f, f2];
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
-
-    let filtered = vec.iter().filter(|foo| path.traverse(&foo) == "foo" ).collect::<Vec<_>>();
-
-    assert_eq!(filtered.len(), 1);
-}
+Currently none, coming.

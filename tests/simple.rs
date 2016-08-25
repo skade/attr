@@ -1,8 +1,8 @@
-extern crate kv_access;
+extern crate attr;
 
-use kv_access::Attr;
-use kv_access::AttrMut;
-use kv_access::Attributes;
+use attr::Attr;
+use attr::AttrMut;
+use attr::Attributes;
 
 pub struct Foo {
     bar: String,

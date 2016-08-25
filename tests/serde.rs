@@ -1,16 +1,16 @@
 extern crate serde_json;
-extern crate kv_access;
+extern crate attr;
 
 use serde_json as json;
 use serde_json::value::Value;
-use kv_access::IndexableAttr;
+use attr::IndexableAttr;
 
-use kv_access::Attr;
-use kv_access::Attributes;
-use kv_access::serde_impl::SerdeAttribute;
+use attr::Attr;
+use attr::Attributes;
+use attr::serde_impl::SerdeAttribute;
 
-use kv_access::retrieve;
-use kv_access::Traverse;
+use attr::retrieve;
+use attr::Traverse;
 
 #[test]
 fn test_attr() {
