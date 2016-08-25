@@ -1,7 +1,7 @@
 # attr
 
 `attr` is a Library to provide external access to a datastructure through a
-typed path object, leveraging all type information known about the data
+typed path object, using all type information known about the data
 structure at hand.
 
 This allows expressing queries on data structures not currently at hand without
