@@ -191,6 +191,11 @@ pub mod bla {
 }
 ```
 
+## Currently open things
+
+* Unify mutable and immutable retrieval, if possible
+* Unify the retrieval interface between fields and paths, if possible
+
 ## Bitten tongues
 
 Nearly called that library lazr-pointer, because it is inteded to be used in the
