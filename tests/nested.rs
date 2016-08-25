@@ -2,8 +2,8 @@ extern crate kv_access;
 
 use kv_access::Attr;
 use kv_access::Identity;
-use kv_access::new_immutable_path;
-use kv_access::new_mutable_path;
+use kv_access::retrieve;
+use kv_access::retrieve_mut;
 use kv_access::Combine;
 use kv_access::MutCombine;
 use kv_access::IndexableAttr;
@@ -135,7 +135,7 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let path = new_immutable_path(bla::Name).prepend(foo::Batz);
+    let path = retrieve(bla::Name).from(foo::Batz);
 //    let mut path = new_path(bla::Name).prepend(foo::Bla); <-- this fails and should be made a compile-test \o/
 
     let val = path.traverse(&f);
@@ -146,13 +146,13 @@ fn nested_access() {
 fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let path = new_mutable_path(bla::Name).prepend(foo::Batz);
+    let path = retrieve_mut(bla::Name).from(foo::Batz);
 
     {
         let x = path.traverse_mut(&mut f);
         *x = "bar".into();
     }
-    let path = new_immutable_path(bla::Name).prepend(foo::Batz);
+    let path = retrieve(bla::Name).from(foo::Batz);
 
     let y = path.traverse(&f);
     assert_eq!(y, "bar");

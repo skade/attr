@@ -54,7 +54,7 @@ pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Si
     phantomz: PhantomData<&'a Z>
 }
 
-pub fn new_immutable_path<'a, 'b, T, A: Attr<T>>(attr: A) -> ImmutablePath<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
+pub fn retrieve<'a, 'b, T, A: Attr<T>>(attr: A) -> ImmutablePath<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
         where Identity : Traverse<'a, 'b, <A as Attr<T>>::Output, <A as Attr<T>>::Output>
 {
     ImmutablePath {
@@ -79,7 +79,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
     //    }
     //}
 
-    pub fn prepend<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePath<'a, 'b, NX, NY, NZ, NA, ImmutablePath<'a, 'b, X, Y, Z, A, R>>
+    pub fn from<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePath<'a, 'b, NX, NY, NZ, NA, ImmutablePath<'a, 'b, X, Y, Z, A, R>>
         where NA: Attr<NX, Output=NY>,
               ImmutablePath<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, NZ> {
         ImmutablePath {
@@ -118,7 +118,7 @@ pub struct MutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Size
     phantomz: PhantomData<&'a mut Z>
 }
 
-pub fn new_mutable_path<'a, 'b, T, A: AttrMut<T>>(attr: A) -> MutablePath<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
+pub fn retrieve_mut<'a, 'b, T, A: AttrMut<T>>(attr: A) -> MutablePath<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
         where Identity : TraverseMut<'a, 'b, <A as Attr<T>>::Output, <A as Attr<T>>::Output>
 {
     MutablePath {
@@ -143,7 +143,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: AttrMut<X, Output=Y>, R: TraverseMut<'a
     //    }
     //}
 
-    pub fn prepend<NX, NY, NZ, NA>(self, attr: NA) -> MutablePath<'a, 'b, NX, NY, NZ, NA, MutablePath<'a, 'b, X, Y, Z, A, R>>
+    pub fn from<NX, NY, NZ, NA>(self, attr: NA) -> MutablePath<'a, 'b, NX, NY, NZ, NA, MutablePath<'a, 'b, X, Y, Z, A, R>>
         where NA: AttrMut<NX, Output=NY>,
               MutablePath<'a, 'b, X, Y, Z, A, R>: TraverseMut<'a, 'b, NY, NZ> {
         MutablePath {
