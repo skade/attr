@@ -19,6 +19,8 @@ pub struct Bla {
 pub mod foo {
     use kv_access::Attr;
     use kv_access::AttrMut;
+    use kv_access::IndexableAttr;
+    use kv_access::IndexableAttrMut;
 
     use super::Foo;
     use super::Bla;
@@ -80,6 +82,22 @@ pub mod foo {
             &mut i.numbers
         }
     }
+
+  impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Numbers {
+      type Output = i32;
+
+      fn at(&self, i: &'b Foo, idx: usize) -> &'a i32 {
+          &self.get(i)[idx]
+      }
+  }
+
+  impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
+      type Output = i32;
+
+      fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
+          &mut self.get_mut(i)[idx]
+      }
+  }
 }
 
 pub mod bla {

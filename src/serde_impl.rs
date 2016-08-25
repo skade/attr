@@ -38,8 +38,12 @@ impl<'a> AttrMut<Value> for SerdeAttribute<'a> {
     }
 }
 
-//impl IndexableAttr<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> for SerdeAttribute<'a> {
-//    type Output: ?Sized;
-//
-//    fn at(&self, i: &'b Type, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
+//impl<'a, 'b : 'a, Idx, A: Attr<Value, Output=Value>> IndexableAttr<'a, 'b, Value, Idx> for A {
+//    fn at(&self, i: &'b Value, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Value, Idx>>::Output {
+//        let v = self.get(i);
+//        match v {
+//            &Value::Array(ref vec) => { vec[idx] },
+//            _ => panic!("at on a non-array")
+//        }
+//    }
 //}
