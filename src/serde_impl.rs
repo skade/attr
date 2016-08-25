@@ -3,6 +3,7 @@ use super::Attr;
 use super::AttrMut;
 use std::ops::Index;
 use super::IndexableAttr;
+use std::ops::IndexMut;
 
 pub struct SerdeAttribute<'a> {
     name: &'a str
@@ -34,6 +35,18 @@ impl<'a> AttrMut<Value> for SerdeAttribute<'a> {
         match i {
             &mut Value::Object(ref mut m) => { m.get_mut(self.name).unwrap() },
             _ => panic!("get on a non-object")
+        }
+    }
+}
+
+impl<'a, 'b : 'a, Idx> IndexableAttr<'a, 'b, Value, Idx> for SerdeAttribute<'a> {
+    type Output = Value;
+
+    fn at(&self, i: &'b Value, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Value, Idx>>::Output {
+        let val = &self.get(i);
+        match val {
+            &Value::Array(ref vec) => (*vec)[idx],
+            _ => panic!("at on non-array")
         }
     }
 }

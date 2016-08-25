@@ -1,3 +1,4 @@
+#![feature(specialization)]
 extern crate serde_json;
 
 pub mod serde_impl;
@@ -30,13 +31,13 @@ pub trait IndexableAttr<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : Attr<Type>{
 pub trait IndexableAttrMut<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : IndexableAttr<'a, 'b, Type, Idx> {
     type Output: ?Sized;
 
-    fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
+    fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttrMut<'a, 'b, Type, Idx>>::Output;
 }
 
 impl<'a, 'b : 'a, Idx, O: Index<Idx> + 'a, Type, A: Attr<Type, Output=O>> IndexableAttr<'a, 'b, Type, Idx> for A {
     type Output = O::Output;
 
-    fn at(&self, i: &'b Type, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output {
+    default fn at(&self, i: &'b Type, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output {
         &self.get(i)[idx]
     }
 }
@@ -44,7 +45,7 @@ impl<'a, 'b : 'a, Idx, O: Index<Idx> + 'a, Type, A: Attr<Type, Output=O>> Indexa
 impl<'a, 'b : 'a, Idx, O: IndexMut<Idx> + 'a, Type, A: AttrMut<Type, Output=O>> IndexableAttrMut<'a, 'b, Type, Idx> for A {
     type Output = O::Output;
 
-    fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttrMut<'a, 'b, Type, Idx>>::Output {
+    default fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttrMut<'a, 'b, Type, Idx>>::Output {
         &mut self.get_mut(i)[idx]
     }
 }
