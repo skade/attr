@@ -46,7 +46,7 @@ pub trait MutCombine<'a, 'b: 'a, X, A: AttrMut<X>, B: AttrMut<A::Output>> {
     fn get_mut(&self, i: &'b mut X) -> &'a mut B::Output;
 }
 
-pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
+pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
@@ -54,18 +54,31 @@ pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Ou
     phantomz: PhantomData<&'a Z>
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
-    pub fn new<NX, NY, NA>(attr: NA) -> ImmutablePathComponent<'a, 'b, NX, NY, NY, NA, Identity>
-        where Identity : Traverse<'a, 'b, NY, NY>,
-              NA: Attr<NX, Output=NY> {
-        ImmutablePathComponent {
-            attr: attr,
-            next: Identity,
-            phantomx: PhantomData,
-            phantomy: PhantomData,
-            phantomz: PhantomData
-        }
+
+pub fn new_path<'a, 'b, T, A: Attr<T>>(attr: A) -> ImmutablePathComponent<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
+        where Identity : Traverse<'a, 'b, <A as Attr<T>>::Output, <A as Attr<T>>::Output>
+{
+    ImmutablePathComponent {
+        attr: attr,
+        next: Identity,
+        phantomx: PhantomData,
+        phantomy: PhantomData,
+        phantomz: PhantomData
     }
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
+    //pub fn new<T>(attr: A) -> ImmutablePathComponent<'a, 'b, T, <A as Attr<T>>::Output, <A as Attr<T>>::Output, A, Identity>
+    //    where Identity : Traverse<'a, 'b, <A as Attr<T>>::Output, <A as Attr<T>>::Output>,
+    //          A: Attr<T> {
+    //    ImmutablePathComponent {
+    //        attr: attr,
+    //        next: Identity,
+    //        phantomx: PhantomData,
+    //        phantomy: PhantomData,
+    //        phantomz: PhantomData
+    //    }
+    //}
 
     pub fn prepend<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePathComponent<'a, 'b, NX, NY, NZ, NA, ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>>
         where NA: Attr<NX, Output=NY>,
@@ -82,7 +95,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
 
 pub struct Identity;
 
-pub trait Traverse<'a, 'b: 'a, X, Y> {
+pub trait Traverse<'a, 'b: 'a, X: ?Sized, Y: ?Sized> {
     fn traverse(&self, val: &'b X) -> &'a Y;
 }
 

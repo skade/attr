@@ -1,6 +1,9 @@
 extern crate kv_access;
 
+use kv_access::Attr;
+use kv_access::Identity;
 use kv_access::Path;
+use kv_access::new_path;
 use kv_access::Combine;
 use kv_access::MutCombine;
 use kv_access::IndexableAttr;
@@ -132,7 +135,8 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let mut path = ImmutablePathComponent::new(foo::Bar);
+    let mut path = new_path(bla::Name).prepend(foo::Batz);
+//    let mut path = new_path(bla::Name).prepend(foo::Bla); <-- this fails and should be made a compile-test \o/
 
     let val = path.traverse(&f);
     assert_eq!(val, "foo");
