@@ -7,9 +7,11 @@ use kv_access::IndexableAttr;
 
 use kv_access::Attr;
 use kv_access::Attributes;
-use kv_access::Path;
 use kv_access::Combine;
 use kv_access::serde_impl::SerdeAttribute;
+
+use kv_access::new_immutable_path;
+use kv_access::Traverse;
 
 #[test]
 fn test_attr() {
@@ -60,8 +62,7 @@ fn test_combine() {
     let obj = Foo { inner: val };
     let attr = SerdeAttribute::new("x");
 
-    let c = Path::combine(Foo::attrs().inner, attr);
+    let path = new_immutable_path(attr).prepend(Foo::attrs().inner);
 
-    println!("{:?}", c.get(&obj));
-    assert_eq!(c.get(&obj), &Value::U64(1));
+    assert_eq!(path.traverse(&obj), &Value::U64(1));
 }
