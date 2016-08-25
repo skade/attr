@@ -46,7 +46,7 @@ pub trait MutCombine<'a, 'b: 'a, X, A: AttrMut<X>, B: AttrMut<A::Output>> {
     fn get_mut(&self, i: &'b mut X) -> &'a mut B::Output;
 }
 
-pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Output=Z>> {
+pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
@@ -54,8 +54,10 @@ pub struct ImmutablePathComponent<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Ou
     phantomz: PhantomData<&'a Z>
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y,Output=Z>> ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
-    pub fn new(attr: A) -> ImmutablePathComponent<'a, 'b, X, Y, Z, A, Identity> where Identity: Traverse<'a, 'b, Y, Output=Z>  {
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
+    pub fn new<NX, NY, NA>(attr: NA) -> ImmutablePathComponent<'a, 'b, NX, NY, NY, NA, Identity>
+        where Identity : Traverse<'a, 'b, NY, NY>,
+              NA: Attr<NX, Output=NY> {
         ImmutablePathComponent {
             attr: attr,
             next: Identity,
@@ -67,7 +69,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
 
     pub fn prepend<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePathComponent<'a, 'b, NX, NY, NZ, NA, ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>>
         where NA: Attr<NX, Output=NY>,
-              ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, Output=NZ> {
+              ImmutablePathComponent<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, NZ> {
         ImmutablePathComponent {
             attr: attr,
             next: self,
@@ -80,23 +82,17 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
 
 pub struct Identity;
 
-pub trait Traverse<'a, 'b: 'a, X> {
-    type Output;
-
-    fn traverse(&self, val: &'b X) -> &'a Self::Output;
+pub trait Traverse<'a, 'b: 'a, X, Y> {
+    fn traverse(&self, val: &'b X) -> &'a Y;
 }
 
-impl<'a, 'b: 'a, T> Traverse<'a, 'b, T> for Identity {
-    type Output = T;
-
+impl<'a, 'b: 'a, T> Traverse<'a, 'b, T, T> for Identity {
     #[inline]
-    fn traverse(&self, val: &'b T) -> &'a Self::Output { val }
+    fn traverse(&self, val: &'b T) -> &'a T { val }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Output=Z>> Traverse<'a, 'b, X> for ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
-    type Output = Z;
-
-    fn traverse(&self, obj: &'b X) -> &'a Self::Output {
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Z> for ImmutablePathComponent<'a, 'b, X, Y, Z, A, R> {
+    fn traverse(&self, obj: &'b X) -> &'a Z {
         let val = self.attr.get(obj);
         self.next.traverse(val)
     }

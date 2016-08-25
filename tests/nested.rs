@@ -132,9 +132,9 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let mut path = ImmutablePathComponent::new(bla::Name).prepend(foo::Batz);
+    let mut path = ImmutablePathComponent::new(foo::Bar);
 
-    let val: &String = path.traverse(&f);
+    let val = path.traverse(&f);
     assert_eq!(val, "foo");
 }
 
