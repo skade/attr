@@ -3,7 +3,6 @@ extern crate serde_json;
 pub mod serde_impl;
 
 use std::marker::PhantomData;
-use std::ops::Add;
 
 pub enum PathWalkError {
     PathCut(String)
@@ -36,14 +35,6 @@ pub trait IndexableAttrMut<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : IndexableAtt
     type Output: ?Sized;
 
     fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
-}
-
-pub trait Combine<'a, 'b: 'a, X, A: Attr<X>, B: Attr<A::Output>> {
-    fn get(&self, i: &'b X) -> &'a B::Output;
-}
-
-pub trait MutCombine<'a, 'b: 'a, X, A: AttrMut<X>, B: AttrMut<A::Output>> {
-    fn get_mut(&self, i: &'b mut X) -> &'a mut B::Output;
 }
 
 pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {

@@ -1,11 +1,7 @@
 extern crate kv_access;
 
-use kv_access::Attr;
-use kv_access::Identity;
 use kv_access::retrieve;
 use kv_access::retrieve_mut;
-use kv_access::Combine;
-use kv_access::MutCombine;
 use kv_access::IndexableAttr;
 use kv_access::IndexableAttrMut;
 use kv_access::Traverse;
