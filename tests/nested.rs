@@ -4,6 +4,8 @@ use attr::retrieve;
 use attr::retrieve_mut;
 use attr::IndexableAttr;
 use attr::IndexableAttrMut;
+use attr::IterableAttr;
+use attr::IterableAttrMut;
 use attr::Traverse;
 use attr::TraverseMut;
 use attr::Attributes;
@@ -21,10 +23,13 @@ pub struct Bla {
 }
 
 pub mod foo {
+    use std::slice;
     use attr::Attr;
     use attr::AttrMut;
     use attr::IndexableAttr;
     use attr::IndexableAttrMut;
+    use attr::IterableAttr;
+    use attr::IterableAttrMut;
     use attr::Attributes;
 
     use super::Foo;
@@ -113,10 +118,22 @@ pub mod foo {
   }
 
   impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
-      type Output = i32;
-
       fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
           &mut self.get_mut(i)[idx]
+      }
+  }
+
+  impl<'a, 'b : 'a> IterableAttr<'a, 'b, Foo> for Numbers {
+      type Item = i32;
+
+      fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
+          Box::new(self.get(i).iter())
+      }
+  }
+
+  impl<'a, 'b : 'a> IterableAttrMut<'a, 'b, Foo> for Numbers {
+      fn iter_mut(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> + 'a> {
+          Box::new(self.get_mut(i).iter_mut())
       }
   }
 }
@@ -207,6 +224,10 @@ fn nested_vec_mutable() {
     assert_eq!(*y, 4)
 }
 
+fn size_of<T>(_t: &T) -> usize {
+    std::mem::size_of::<T>()
+}
+
 #[test]
 fn nested_filter() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
@@ -214,6 +235,8 @@ fn nested_filter() {
 
     let vec = vec![f, f2];
     let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+
+    assert_eq!(size_of(&path),0);
 
     let filtered = vec.iter().filter(|foo| path.traverse(&foo) == "foo" ).collect::<Vec<_>>();
 

@@ -51,8 +51,6 @@ impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Value, usize> for SerdeAttribute<'a> {
 }
 
 impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Value, usize> for SerdeAttribute<'a> {
-    type Output = Value;
-
     fn at_mut(&self, i: &'b mut Value, idx: usize) -> &'a mut Value {
         let v = self.get_mut(i);
         match v {

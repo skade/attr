@@ -198,6 +198,10 @@ pub mod bla {
 * Make all parts return Results, so that walking may fail
 * More fancy path combinators!
 
+## Acknowledgements
+
+* The non-uniform List used to construct paths is adapted from [Link](src.codes) and based on a pattern devised by Tomaka.
+
 ## Bitten tongues
 
 Nearly called that library lazr-pointer, because it is inteded to be used in the

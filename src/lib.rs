@@ -31,13 +31,21 @@ pub trait IndexableAttr<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : Attr<Type> {
     fn at(&self, i: &'b Type, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
 }
 
-pub trait IndexableAttrMut<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : IndexableAttr<'a, 'b, Type, Idx> {
-    type Output: ?Sized;
-
+pub trait IndexableAttrMut<'a, 'b: 'a, Type: ?Sized, Idx: ?Sized> : IndexableAttr<'a, 'b, Type, Idx> + AttrMut<Type> {
     fn at_mut(&self, i: &'b mut Type, idx: Idx) -> &'a mut <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
 }
 
-pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
+pub trait IterableAttr<'a, 'b: 'a, Type: ?Sized> : Attr<Type> {
+    type Item: ?Sized;
+
+    fn iter(&self, i: &'b Type) -> Box<Iterator<Item=&'a Self::Item> + 'a>;
+}
+
+pub trait IterableAttrMut<'a, 'b: 'a, Type: ?Sized> : IterableAttr<'a, 'b, Type> + AttrMut<Type> {
+    fn iter_mut(&self, i: &'b mut Type) -> Box<Iterator<Item=&'a mut Self::Item> + 'a>;
+}
+
+pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
