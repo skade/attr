@@ -45,7 +45,15 @@ pub trait IterableAttrMut<'a, 'b: 'a, Type: ?Sized> : IterableAttr<'a, 'b, Type>
     fn iter_mut(&self, i: &'b mut Type) -> Box<Iterator<Item=&'a mut Self::Item> + 'a>;
 }
 
-pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> {
+pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
+    attr: A,
+    next: R,
+    phantomx: PhantomData<&'b X>,
+    phantomy: PhantomData<&'a Y>,
+    phantomz: PhantomData<&'a Z>
+}
+
+pub struct ImmutableMapPath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'a + ?Sized, Z: 'a + ?Sized, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
@@ -89,6 +97,19 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
             phantomz: PhantomData
         }
     }
+
+    pub fn map<NX, NY, NZ, NA>(self, attr: NA) -> ImmutableMapPath<'a, 'b, NX, NY, NZ, NA, ImmutablePath<'a, 'b, X, Y, Z, A, R>>
+        where NA: IterableAttr<'a, 'b, NX, Item=NY>,
+              NZ: std::iter::Iterator<Item=NY>,
+              ImmutablePath<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, NZ> {
+        ImmutableMapPath {
+            attr: attr,
+            next: self,
+            phantomx: PhantomData,
+            phantomy: PhantomData,
+            phantomz: PhantomData
+        }
+    }
 }
 
 pub struct Identity;
@@ -106,6 +127,14 @@ impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
     fn traverse(&self, obj: &'b X) -> &'a Z {
         let val = self.attr.get(obj);
         self.next.traverse(val)
+    }
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y> + Attr<X>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=&'a Z> + 'a>> for ImmutableMapPath<'a, 'b, X, Y, Z, A, R> {
+    fn traverse(&self, obj: &'b X) -> &'a Box<Iterator<Item=&'a Z> + 'a> {
+        let map = self.attr.iter(obj)
+                      .map(|v| self.next.traverse(v) );
+        & (Box::new(map) as Box<std::iter::Iterator<Item=&'a Z>>)
     }
 }
 
