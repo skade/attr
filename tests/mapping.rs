@@ -1,14 +1,7 @@
 extern crate attr;
 
 use attr::retrieve;
-use attr::retrieve_mut;
-use attr::IndexableAttr;
-use attr::IndexableAttrMut;
-use attr::IterableAttr;
-use attr::IterableAttrMut;
 use attr::Traverse;
-use attr::TraverseMut;
-use attr::Attributes;
 
 #[derive(Debug)]
 pub struct Foo {
@@ -22,7 +15,6 @@ pub struct Bla {
 }
 
 pub mod foo {
-    use std::slice;
     use attr::Attr;
     use attr::AttrMut;
     use attr::IndexableAttr;
@@ -163,7 +155,8 @@ fn test_mapped() {
     let b2 = Bla { name: "bla".into() };
 
     let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
-    let path : Box<_> = retrieve(bla::Name).mapped(foo::Vector);
+    let path = retrieve(bla::Name).mapped(foo::Vector);
 
-    //let result = path.traverse(&foo);
+    let result = path.traverse(&foo).collect::<Vec<_>>();
+    assert_eq!(result, vec!["foo", "bla"]);
 }

@@ -99,7 +99,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, 
         }
     }
 
-    pub fn mapped<NX, NY, NZ, NA, I>(self, attr: NA) -> ImmutableMapPath<'a, 'b, NX, NY, NZ, NA, ImmutablePath<'a, 'b, X, Y, Z, A, R>>
+    pub fn mapped<NX, NY, NZ, NA>(self, attr: NA) -> ImmutableMapPath<'a, 'b, NX, NY, NZ, NA, ImmutablePath<'a, 'b, X, Y, Z, A, R>>
         where NA: IterableAttr<'a, 'b, NX, Item=NY>,
               ImmutablePath<'a, 'b, X, Y, Z, A, R>: Traverse<'a, 'b, NY, &'a NZ> {
         ImmutableMapPath {
@@ -123,14 +123,14 @@ impl<'a, 'b: 'a, T> Traverse<'a, 'b, T, &'a T> for Identity {
     fn traverse(&'b self, val: &'b T) -> &'a T { val }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, &'a Z> + 'b> Traverse<'a, 'b, X, &'a Z> for ImmutablePath<'a, 'b, X, Y, Z, A, R> {
+impl<'a, 'b: 'a, X, Y, Z, A: Attr<X, Output=Y>, R: Traverse<'a, 'b, Y, &'a Z> + 'b> Traverse<'a, 'b, X, &'a Z> for ImmutablePath<'a, 'b, X, Y, Z, A, R> {
     fn traverse(&'b self, obj: &'b X) -> &'a Z {
         let val = self.attr.get(obj);
         self.next.traverse(val)
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, &'a Z>> Traverse<'a, 'b, X, Box<Iterator<Item=&'a Z> + 'a>> for ImmutableMapPath<'a, 'b, X, Y, Z, A, R> {
+impl<'a, 'b: 'a, X, Y, Z, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, &'a Z>> Traverse<'a, 'b, X, Box<Iterator<Item=&'a Z> + 'a>> for ImmutableMapPath<'a, 'b, X, Y, Z, A, R> {
     fn traverse(&'b self, obj: &'b X) -> Box<Iterator<Item=&'a Z> + 'a> {
         let iter = self.attr.iter(obj);
         let next = &self.next;
@@ -159,7 +159,7 @@ pub fn retrieve_mut<'a, 'b, T, A: AttrMut<T>>(attr: A) -> MutablePath<'a, 'b, T,
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: AttrMut<X, Output=Y>, R: TraverseMut<'a, 'b, Y, Z>> MutablePath<'a, 'b, X, Y, Z, A, R> {
+impl<'a, 'b: 'a, X, Y, Z, A: AttrMut<X, Output=Y>, R: TraverseMut<'a, 'b, Y, Z>> MutablePath<'a, 'b, X, Y, Z, A, R> {
     //pub fn new<T>(attr: A) -> ImmutablePathComponent<'a, 'b, T, <A as AttrMut<T>>::Output, <A as AttrMut<T>>::Output, A, Identity>
     //    where Identity : Traverse<'a, 'b, <A as AttrMut<T>>::Output, <A as AttrMut<T>>::Output>,
     //          A: AttrMut<T> {
@@ -186,16 +186,16 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: AttrMut<X, Output=Y>, R: TraverseMut<'a
 }
 
 pub trait TraverseMut<'a, 'b: 'a, X: ?Sized, Y: ?Sized> {
-    fn traverse_mut(&self, val: &'b mut X) -> &'a mut Y;
+    fn traverse_mut(&'b self, val: &'b mut X) -> &'a mut Y;
 }
 
 impl<'a, 'b: 'a, T> TraverseMut<'a, 'b, T, T> for Identity {
     #[inline]
-    fn traverse_mut(&self, val: &'b mut T) -> &'a mut T { val }
+    fn traverse_mut(&'b self, val: &'b mut T) -> &'a mut T { val }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: AttrMut<X, Output=Y>, R: TraverseMut<'a, 'b, Y, Z>> TraverseMut<'a, 'b, X, Z> for MutablePath<'a, 'b, X, Y, Z, A, R> {
-    fn traverse_mut(&self, obj: &'b mut X) -> &'a mut Z {
+impl<'a, 'b: 'a, X, Y, Z, A: AttrMut<X, Output=Y>, R: TraverseMut<'a, 'b, Y, Z>> TraverseMut<'a, 'b, X, Z> for MutablePath<'a, 'b, X, Y, Z, A, R> {
+    fn traverse_mut(&'b self, obj: &'b mut X) -> &'a mut Z {
         let val = self.attr.get_mut(obj);
         self.next.traverse_mut(val)
     }
