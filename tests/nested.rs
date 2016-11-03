@@ -4,8 +4,6 @@ use attr::retrieve;
 use attr::retrieve_mut;
 use attr::IndexableAttr;
 use attr::IndexableAttrMut;
-use attr::IterableAttr;
-use attr::IterableAttrMut;
 use attr::Traverse;
 use attr::TraverseMut;
 use attr::Attributes;
@@ -23,7 +21,6 @@ pub struct Bla {
 }
 
 pub mod foo {
-    use std::slice;
     use attr::Attr;
     use attr::AttrMut;
     use attr::IndexableAttr;
@@ -109,33 +106,33 @@ pub mod foo {
         }
     }
 
-  impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Numbers {
-      type Output = i32;
+    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Numbers {
+        type Output = i32;
 
-      fn at(&self, i: &'b Foo, idx: usize) -> &'a i32 {
-          &self.get(i)[idx]
-      }
-  }
+        fn at(&self, i: &'b Foo, idx: usize) -> &'a i32 {
+            &self.get(i)[idx]
+        }
+    }
 
-  impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
-      fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
-          &mut self.get_mut(i)[idx]
-      }
-  }
+    impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
+        fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
+            &mut self.get_mut(i)[idx]
+        }
+    }
 
-  impl<'a, 'b : 'a> IterableAttr<'a, 'b, Foo> for Numbers {
-      type Item = i32;
+    impl<'a, 'b: 'a> IterableAttr<'a, 'b, Foo> for Numbers {
+        type Item = i32;
 
-      fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
-          Box::new(self.get(i).iter())
-      }
-  }
+        fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
+            Box::new(self.get(i).iter())
+        }
+    }
 
-  impl<'a, 'b : 'a> IterableAttrMut<'a, 'b, Foo> for Numbers {
-      fn iter_mut(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> + 'a> {
-          Box::new(self.get_mut(i).iter_mut())
-      }
-  }
+    impl<'a, 'b: 'a> IterableAttrMut<'a, 'b, Foo> for Numbers {
+        fn iter_mut(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> +'a> {
+            Box::new(self.get_mut(i).iter_mut())
+        }
+    }
 }
 
 pub mod bla {
