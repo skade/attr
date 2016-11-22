@@ -71,10 +71,10 @@ pub mod foo {
     }
 
     impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b Foo, usize> for Vector {
-        type Output = Bla;
+        type Output = &'a Bla;
 
         fn at(&self, i: &'b Foo, idx: usize) -> &'a Bla {
-            &self.get(i)[idx]
+            unsafe { self.get(i).get_unchecked(idx) }
         }
     }
 
@@ -166,7 +166,6 @@ fn test_mapped() {
     let result = path.traverse(&foo).collect::<Vec<_>>();
     assert_eq!(result, vec!["foo", "bla"]);
 }
-
 
 #[test]
 fn test_complex_mapped() {

@@ -81,6 +81,18 @@ fn simple_access() {
         }
     }
 
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Bar> for BarAttributeBatz {
+        type Output = &'a mut String;
+
+        fn get(&self, i: &'b mut Bar) -> Self::Output {
+             &mut i.batz
+        }
+
+        fn name(&self) -> &'static str {
+            "batz"
+        }
+    }
+
     let f = Foo { bar: "foobar".into(), batz: 20 };
     Foo::attrs().bar.get(&f);
     Foo::attrs().batz.get(&f);
@@ -88,4 +100,8 @@ fn simple_access() {
     let f = Bar { batz: "foobar".into() };
     Bar::attrs().batz.get(&f);
 
+    let mut f = Bar { batz: "foobar".into() };
+
+    let mut batz = Bar::attrs().batz.get(&mut f);
+    batz.push('b');
 }

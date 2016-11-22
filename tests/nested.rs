@@ -1,11 +1,8 @@
 extern crate attr;
 
 use attr::retrieve;
-use attr::mutable::retrieve_mut;
 use attr::IndexableAttr;
-use attr::mutable::IndexableAttrMut;
 use attr::Traverse;
-use attr::mutable::TraverseMut;
 use attr::Attributes;
 
 #[derive(Debug)]
@@ -22,11 +19,8 @@ pub struct Bla {
 
 pub mod foo {
     use attr::Attr;
-    use attr::mutable::AttrMut;
     use attr::IndexableAttr;
-    use attr::mutable::IndexableAttrMut;
     use attr::IterableAttr;
-    use attr::mutable::IterableAttrMut;
     use attr::Attributes;
 
     use super::Foo;
@@ -52,11 +46,11 @@ pub mod foo {
         }
     }
 
-    impl Attr<Foo> for Bar {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Bar {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a String {
-            &i.bar
+        fn get(&self, i: &'b Foo) -> &'a str {
+            i.bar.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -64,16 +58,22 @@ pub mod foo {
         }
     }
 
-    impl AttrMut<Foo> for Bar {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut String {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'a mut Foo> for Bar {
+        type Output = &'a mut String;
+
+        fn get(&self, i: &'a mut Foo) -> &'a mut String {
             &mut i.bar
+        }
+
+        fn name(&self) -> &'static str {
+            "bar"
         }
     }
 
-    impl Attr<Foo> for Batz {
-        type Output = Bla;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Batz {
+        type Output = &'a Bla;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Bla {
+        fn get(&self, i: &'b Foo) -> &'a Bla {
             &i.batz
         }
 
@@ -82,17 +82,23 @@ pub mod foo {
         }
     }
 
-    impl AttrMut<Foo> for Batz {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Bla {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Batz {
+        type Output = &'a mut Bla;
+
+        fn get(&self, i: &'b mut Foo) -> &'a mut Bla {
             &mut i.batz
+        }
+
+        fn name(&self) -> &'static str {
+            "batz"
         }
     }
 
-    impl Attr<Foo> for Numbers {
-        type Output = Vec<i32>;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Numbers {
+        type Output = &'a[i32];
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Vec<i32> {
-            &i.numbers
+        fn get(&self, i: &'b Foo) -> &'a[i32] {
+            i.numbers.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -100,44 +106,53 @@ pub mod foo {
         }
     }
 
-    impl AttrMut<Foo> for Numbers {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Vec<i32> {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Numbers {
+        type Output = &'a mut Vec<i32>;
+
+        fn get(&self, i: &'b mut Foo) -> &'a mut Vec<i32> {
             &mut i.numbers
         }
+
+        fn name(&self) -> &'static str {
+            "numbers"
+        }
     }
 
-    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Numbers {
+    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b Foo, usize> for Numbers {
         type Output = i32;
 
-        fn at(&self, i: &'b Foo, idx: usize) -> &'a i32 {
-            &self.get(i)[idx]
+        fn at(&self, i: &'b Foo, idx: usize) -> i32 {
+            self.get(i)[idx]
         }
     }
 
-    impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
-        fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
-            &mut self.get_mut(i)[idx]
+    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b mut Foo, usize> for Numbers {
+        type Output = &'a mut i32;
+
+        fn at(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
+            unsafe { self.get(i).get_unchecked_mut(idx) }
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttr<'a, 'b, Foo> for Numbers {
-        type Item = i32;
+    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b Foo> for Numbers {
+        type Item = &'a i32;
 
         fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
             Box::new(self.get(i).iter())
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttrMut<'a, 'b, Foo> for Numbers {
-        fn iter_mut(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> +'a> {
-            Box::new(self.get_mut(i).iter_mut())
+    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b mut Foo> for Numbers {
+        type Item = &'a mut i32;
+
+        fn iter(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> +'a> {
+            Box::new(self.get(i).iter_mut())
         }
     }
 }
 
 pub mod bla {
     use attr::Attr;
-    use attr::mutable::AttrMut;
     use attr::Attributes;
 
     use super::Bla;
@@ -156,11 +171,11 @@ pub mod bla {
         }
     }
 
-    impl Attr<Bla> for Name {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bla> for Name {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Bla) -> &'a String {
-            &i.name
+        fn get(&self, i: &'a Bla) -> &'a str {
+            i.name.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -168,9 +183,15 @@ pub mod bla {
         }
     }
 
-    impl AttrMut<Bla> for Name {
-        fn get_mut<'a, >(&self, i: &'a mut Bla) -> &'a mut String {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Bla> for Name {
+        type Output = &'a mut String;
+
+        fn get(&self, i: &'a mut Bla) -> &'a mut String {
             &mut i.name
+        }
+
+        fn name(&self) -> &'static str {
+            "name"
         }
     }
 }
@@ -190,16 +211,17 @@ fn nested_access() {
 fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let path = retrieve_mut(Bla::attrs().name).from(Foo::attrs().batz);
-
     {
-        let x = path.traverse_mut(&mut f);
+        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+        let x = path.traverse(&mut f);
         *x = "bar".into();
     }
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+    {
+        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
-    let y = path.traverse(&f);
-    assert_eq!(y, "bar");
+        let y = path.traverse(&f);
+        assert_eq!(y, "bar");
+    }
 }
 
 #[test]
@@ -207,18 +229,18 @@ fn nested_vec() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
     let x = foo::Numbers.at(&f, 1);
 
-    assert_eq!(*x, 2)
+    assert_eq!(x, 2)
 }
 
 #[test]
 fn nested_vec_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
     {
-        let x = foo::Numbers.at_mut(&mut f, 1);
+        let mut x: &mut i32 = foo::Numbers.at(&mut f, 1);
         *x = 4;
     }
     let y = foo::Numbers.at(&f, 1);
-    assert_eq!(*y, 4)
+    assert_eq!(y, 4)
 }
 
 fn size_of<T>(_t: &T) -> usize {
@@ -235,7 +257,7 @@ fn nested_filter() {
 
     assert_eq!(size_of(&path),0);
 
-    let filtered = vec.iter().filter(|foo| path.traverse(&foo) == "foo" ).collect::<Vec<_>>();
+    let filtered = vec.iter().filter(|foo| path.traverse(*foo) == "foo" ).collect::<Vec<_>>();
 
     assert_eq!(filtered.len(), 1);
 }

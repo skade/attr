@@ -1,8 +1,5 @@
 extern crate serde_json;
 
-//pub mod serde_impl;
-//pub mod mutable;
-
 use std::marker::PhantomData;
 
 pub trait Attr<'a, 'b: 'a, Type: 'a + ?Sized> {
@@ -19,7 +16,7 @@ pub trait Attributes<AttributeType> {
 pub trait IndexableAttr<'a, 'b: 'a, Type: 'b + ?Sized, Idx: ?Sized> : Attr<'a, 'b, Type> {
     type Output: ?Sized;
 
-    fn at(&self, i: Type, idx: Idx) -> &'a <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
+    fn at(&self, i: Type, idx: Idx) -> <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
 }
 
 pub trait IterableAttr<'a, 'b: 'a, Type: 'b + ?Sized> : Attr<'a, 'b, Type> {
@@ -39,14 +36,14 @@ impl<'a, 'b: 'a, T: 'b> Traverse<'a, 'b, T, T> for Identity {
     fn traverse(&'b self, val: T) -> T { val }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z> + 'b> Traverse<'a, 'b, X, Z> for ImmutablePath<'a, 'b, X, Y, Z, A, R> {
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z> + 'b> Traverse<'a, 'b, X, Z> for Path<'a, 'b, X, Y, Z, A, R> {
     fn traverse(&'b self, obj: X) -> Z {
         let val = self.attr.get(obj);
         self.next.traverse(val)
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for ImmutableMapPath<'a, 'b, X, Y, Z, A, R> {
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<'a, 'b, X, Y, Z, A, R> {
     fn traverse(&'b self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
         let iter = self.attr.iter(obj);
         let next = &self.next;
@@ -55,7 +52,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Tra
     }
 }
 
-pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Sized, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
+pub struct Path<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Sized, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
@@ -63,7 +60,7 @@ pub struct ImmutablePath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Si
     phantomz: PhantomData<&'a Z>
 }
 
-pub struct ImmutableMapPath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Sized, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> {
+pub struct MapPath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Sized, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
     next: R,
     phantomx: PhantomData<&'b X>,
@@ -71,10 +68,10 @@ pub struct ImmutableMapPath<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + 
     phantomz: PhantomData<&'a Z>
 }
 
-pub fn retrieve<'a, T, A: Attr<'a, 'a, T>>(attr: A) -> ImmutablePath<'a, 'a, T, A::Output, A::Output, A, Identity>
+pub fn retrieve<'a, T, A: Attr<'a, 'a, T>>(attr: A) -> Path<'a, 'a, T, A::Output, A::Output, A, Identity>
         where Identity : Traverse<'a, 'a, A::Output, A::Output>
 {
-    ImmutablePath {
+    Path {
         attr: attr,
         next: Identity,
         phantomx: PhantomData,
@@ -83,11 +80,11 @@ pub fn retrieve<'a, T, A: Attr<'a, 'a, T>>(attr: A) -> ImmutablePath<'a, 'a, T, 
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> ImmutablePath<'a, 'b, X, Y, Z, A, R> {
-    pub fn from<NX, NY, NZ, NA>(self, attr: NA) -> ImmutablePath<'a, 'b, NX, NY, NZ, NA, Self>
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> Path<'a, 'b, X, Y, Z, A, R> {
+    pub fn from<NX, NY, NZ, NA>(self, attr: NA) -> Path<'a, 'b, NX, NY, NZ, NA, Self>
         where NA: Attr<'a, 'b, NX, Output=NY>,
               Self: Traverse<'a, 'b, NY, NZ> {
-        ImmutablePath {
+        Path {
             attr: attr,
             next: self,
             phantomx: PhantomData,
@@ -96,10 +93,10 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<
         }
     }
 
-    pub fn mapped<NX, NY, NZ, NA>(self, attr: NA) -> ImmutableMapPath<'a, 'b, NX, NY, NZ, NA, Self>
+    pub fn mapped<NX, NY, NZ, NA>(self, attr: NA) -> MapPath<'a, 'b, NX, NY, NZ, NA, Self>
         where NA: IterableAttr<'a, 'b, NX, Item=NY>,
               Self: Traverse<'a, 'b, NY, NZ> {
-        ImmutableMapPath {
+        MapPath {
             attr: attr,
             next: self,
             phantomx: PhantomData,
@@ -109,12 +106,12 @@ impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> ImmutableMapPath<'a, 'b, X, Y, Z, A, R> {
-    pub fn from<NX, NY, NA>(self, attr: NA) -> ImmutablePath<'a, 'b, NX, NY, Box<std::iter::Iterator<Item=Z> + 'a>, NA, Self>
+impl<'a, 'b: 'a, X: 'b, Y: 'a, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> MapPath<'a, 'b, X, Y, Z, A, R> {
+    pub fn from<NX, NY, NA>(self, attr: NA) -> Path<'a, 'b, NX, NY, Box<std::iter::Iterator<Item=Z> + 'a>, NA, Self>
         where NA: Attr<'a, 'b, NX, Output=NY>,
               Self: Traverse<'a, 'b, NY, Box<std::iter::Iterator<Item=Z> + 'a>>
     {
-        ImmutablePath {
+        Path {
             attr: attr,
             next: self,
             phantomx: PhantomData,
