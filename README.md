@@ -28,17 +28,19 @@ fn edit_name() {
         let x = path.traverse_mut(&mut f);
         *x = "bar".into();
     }
-    let path = retrieve(bla::Name).from(foo::Batz);
+    {
+        let path = retrieve(bla::Name).from(foo::Batz);
 
-    let y = path.traverse(&f);
-    assert_eq!(y, "bar");
+        let y = path.traverse(&f);
+        assert_eq!(y, "bar");
+    }
 }
 ```
 
 The construction of the following path would fail with a type error:
 
 ```rust
-retrieve_mut(foo::Batz).from(bla::Name);
+retrieve(foo::Batz).from(bla::Name);
 ```
 
 ## Underlying definitions
@@ -193,9 +195,9 @@ pub mod bla {
 
 ## Currently open things
 
-* Unify mutable and immutable retrieval, if possible
 * Unify the retrieval interface between fields and paths, if possible
 * Make all parts return Results, so that walking may fail
+* Possibly only if things may fail
 * More fancy path combinators!
 
 ## Acknowledgements
