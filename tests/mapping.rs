@@ -14,13 +14,16 @@ pub struct Bla {
     name: String
 }
 
+#[derive(Debug)]
+pub struct Top {
+    foo: Foo
+}
+
+
 pub mod foo {
     use attr::Attr;
-    use attr::AttrMut;
     use attr::IndexableAttr;
-    use attr::IndexableAttrMut;
     use attr::IterableAttr;
-    use attr::IterableAttrMut;
     use attr::Attributes;
 
     use super::Foo;
@@ -55,12 +58,6 @@ pub mod foo {
         }
     }
 
-    impl AttrMut<Foo> for Bar {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut String {
-            &mut i.bar
-        }
-    }
-
     impl Attr<Foo> for Vector {
         type Output = Vec<Bla>;
 
@@ -73,23 +70,11 @@ pub mod foo {
         }
     }
 
-    impl AttrMut<Foo> for Vector {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Vec<Bla> {
-            &mut i.vector
-        }
-    }
-
     impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Vector {
         type Output = Bla;
 
         fn at(&self, i: &'b Foo, idx: usize) -> &'a Bla {
             &self.get(i)[idx]
-        }
-    }
-
-    impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Vector {
-        fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut Bla {
-            &mut self.get_mut(i)[idx]
         }
     }
 
@@ -100,18 +85,11 @@ pub mod foo {
             Box::new(self.get(i).iter())
         }
     }
-
-    impl<'a, 'b: 'a> IterableAttrMut<'a, 'b, Foo> for Vector {
-        fn iter_mut(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut Bla> +'a> {
-            Box::new(self.get_mut(i).iter_mut())
-        }
-    }
 }
 
 
 pub mod bla {
     use attr::Attr;
-    use attr::AttrMut;
     use attr::Attributes;
 
     use super::Bla;
@@ -141,10 +119,38 @@ pub mod bla {
             "name"
         }
     }
+}
 
-    impl AttrMut<Bla> for Name {
-        fn get_mut<'a, >(&self, i: &'a mut Bla) -> &'a mut String {
-            &mut i.name
+pub mod top {
+    use attr::Attr;
+    use attr::Attributes;
+
+    use super::Top;
+    use super::Foo;
+
+    #[derive(Default)]
+    pub struct FooField;
+
+    #[derive(Default)]
+    pub struct TopAttributes {
+        pub foo: FooField,
+    }
+
+    impl Attributes<TopAttributes> for Top {
+        fn attrs() -> TopAttributes {
+            TopAttributes::default()
+        }
+    }
+
+    impl Attr<Top> for FooField {
+        type Output = Foo;
+
+        fn get<'a, >(&self, i: &'a Top) -> &'a Foo {
+            &i.foo
+        }
+
+        fn name(&self) -> &'static str {
+            "foo"
         }
     }
 }
@@ -158,5 +164,20 @@ fn test_mapped() {
     let path = retrieve(bla::Name).mapped(foo::Vector);
 
     let result = path.traverse(&foo).collect::<Vec<_>>();
+    assert_eq!(result, vec!["foo", "bla"]);
+}
+
+
+#[test]
+fn test_complex_mapped() {
+    let b1 = Bla { name: "foo".into() };
+    let b2 = Bla { name: "bla".into() };
+
+    let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
+    let top = Top { foo: foo };
+
+    let path = retrieve(bla::Name).mapped(foo::Vector).from(top::FooField);
+
+    let result = path.traverse(&top).collect::<Vec<_>>();
     assert_eq!(result, vec!["foo", "bla"]);
 }

@@ -1,7 +1,7 @@
 extern crate attr;
 
 use attr::Attr;
-use attr::AttrMut;
+use attr::mutable::AttrMut;
 use attr::Attributes;
 
 pub struct Foo {
@@ -44,12 +44,6 @@ fn simple_access() {
         }
     }
 
-    impl AttrMut<Foo> for FooAttributeBar {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Self::Output {
-            &mut i.bar
-        }
-    }
-
     impl Attr<Foo> for FooAttributeBatz {
         type Output = i32;
 
@@ -59,12 +53,6 @@ fn simple_access() {
 
         fn name(&self) -> &'static str {
             "batz"
-        }
-    }
-
-    impl AttrMut<Foo> for FooAttributeBatz {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Self::Output {
-            &mut i.batz
         }
     }
 

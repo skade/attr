@@ -1,11 +1,11 @@
 extern crate attr;
 
 use attr::retrieve;
-use attr::retrieve_mut;
+use attr::mutable::retrieve_mut;
 use attr::IndexableAttr;
-use attr::IndexableAttrMut;
+use attr::mutable::IndexableAttrMut;
 use attr::Traverse;
-use attr::TraverseMut;
+use attr::mutable::TraverseMut;
 use attr::Attributes;
 
 #[derive(Debug)]
@@ -22,11 +22,11 @@ pub struct Bla {
 
 pub mod foo {
     use attr::Attr;
-    use attr::AttrMut;
+    use attr::mutable::AttrMut;
     use attr::IndexableAttr;
-    use attr::IndexableAttrMut;
+    use attr::mutable::IndexableAttrMut;
     use attr::IterableAttr;
-    use attr::IterableAttrMut;
+    use attr::mutable::IterableAttrMut;
     use attr::Attributes;
 
     use super::Foo;
@@ -137,7 +137,7 @@ pub mod foo {
 
 pub mod bla {
     use attr::Attr;
-    use attr::AttrMut;
+    use attr::mutable::AttrMut;
     use attr::Attributes;
 
     use super::Bla;
