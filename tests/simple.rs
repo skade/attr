@@ -1,7 +1,6 @@
 extern crate attr;
 
 use attr::Attr;
-use attr::mutable::AttrMut;
 use attr::Attributes;
 
 pub struct Foo {
@@ -32,11 +31,11 @@ fn simple_access() {
         }
     }
 
-    impl Attr<Foo> for FooAttributeBar {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for FooAttributeBar {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Self::Output {
-            &i.bar
+        fn get(&self, i: &'b Foo) -> &'a str {
+            i.bar.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -44,11 +43,11 @@ fn simple_access() {
         }
     }
 
-    impl Attr<Foo> for FooAttributeBatz {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for FooAttributeBatz {
         type Output = i32;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Self::Output {
-            &i.batz
+        fn get(&self, i: &'b Foo) -> Self::Output {
+            i.batz
         }
 
         fn name(&self) -> &'static str {
@@ -70,11 +69,11 @@ fn simple_access() {
         }
     }
 
-    impl Attr<Bar> for BarAttributeBatz {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bar> for BarAttributeBatz {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Bar) -> &'a Self::Output {
-            &i.batz
+        fn get(&self, i: &'b Bar) -> Self::Output {
+            i.batz.as_ref()
         }
 
         fn name(&self) -> &'static str {

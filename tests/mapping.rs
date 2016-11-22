@@ -46,11 +46,11 @@ pub mod foo {
         }
     }
 
-    impl Attr<Foo> for Bar {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Bar {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a String {
-            &i.bar
+        fn get(&self, i: &'b Foo) -> Self::Output {
+            i.bar.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -58,11 +58,11 @@ pub mod foo {
         }
     }
 
-    impl Attr<Foo> for Vector {
-        type Output = Vec<Bla>;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Vector {
+        type Output = &'a [Bla];
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Vec<Bla> {
-            &i.vector
+        fn get(&self, i: &'b Foo) -> &'a [Bla] {
+            i.vector.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -70,7 +70,7 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Vector {
+    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b Foo, usize> for Vector {
         type Output = Bla;
 
         fn at(&self, i: &'b Foo, idx: usize) -> &'a Bla {
@@ -78,8 +78,8 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttr<'a, 'b, Foo> for Vector {
-        type Item = Bla;
+    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b Foo> for Vector {
+        type Item = &'a Bla;
 
         fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a Bla> + 'a> {
             Box::new(self.get(i).iter())
@@ -108,11 +108,11 @@ pub mod bla {
         }
     }
 
-    impl Attr<Bla> for Name {
-        type Output = String;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'a Bla> for Name {
+        type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Bla) -> &'a String {
-            &i.name
+        fn get(&self, i: &'a Bla) -> &'a str {
+            i.name.as_ref()
         }
 
         fn name(&self) -> &'static str {
@@ -142,10 +142,10 @@ pub mod top {
         }
     }
 
-    impl Attr<Top> for FooField {
-        type Output = Foo;
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Top> for FooField {
+        type Output = &'a Foo;
 
-        fn get<'a, >(&self, i: &'a Top) -> &'a Foo {
+        fn get(&self, i: &'b Top) -> &'a Foo {
             &i.foo
         }
 
