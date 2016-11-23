@@ -25,35 +25,12 @@ pub trait IterableAttr<'a, 'b: 'a, Type: 'b + ?Sized> : Attr<'a, 'b, Type> {
     fn iter(&self, i: Type) -> Box<Iterator<Item=Self::Item> + 'a>;
 }
 
-pub struct Identity;
-
 pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'b, Y: ?Sized + 'a> {
     #[inline]
     fn traverse(&'b self, val: X) -> Y;
 }
 
-impl<'a, 'b: 'a, T: 'b> Traverse<'a, 'b, T, T> for Identity {
-    #[inline]
-    fn traverse(&'b self, val: T) -> T { val }
-}
-
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z> + 'b> Traverse<'a, 'b, X, Z> for Path<'a, 'b, X, Y, Z, A, R> {
-    #[inline]
-    fn traverse(&'b self, obj: X) -> Z {
-        let val = self.attr.get(obj);
-        self.next.traverse(val)
-    }
-}
-
-impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<'a, 'b, X, Y, Z, A, R> {
-    #[inline]
-    fn traverse(&'b self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
-        let iter = self.attr.iter(obj);
-        let next = &self.next;
-        let map = iter.map(move |v| next.traverse(v) );
-        Box::new(map)
-    }
-}
+pub struct Identity;
 
 pub struct Path<'a, 'b: 'a, X: 'b + ?Sized, Y: 'b + ?Sized, Z: 'a + ?Sized, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z>> {
     attr: A,
@@ -80,6 +57,29 @@ pub fn retrieve<'a, T, A: Attr<'a, 'a, T>>(attr: A) -> Path<'a, 'a, T, A::Output
         phantomx: PhantomData,
         phantomy: PhantomData,
         phantomz: PhantomData
+    }
+}
+
+impl<'a, 'b: 'a, T: 'b> Traverse<'a, 'b, T, T> for Identity {
+    #[inline]
+    fn traverse(&'b self, val: T) -> T { val }
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z> + 'b> Traverse<'a, 'b, X, Z> for Path<'a, 'b, X, Y, Z, A, R> {
+    #[inline]
+    fn traverse(&'b self, obj: X) -> Z {
+        let val = self.attr.get(obj);
+        self.next.traverse(val)
+    }
+}
+
+impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<'a, 'b, X, Y, Z, A, R> {
+    #[inline]
+    fn traverse(&'b self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
+        let iter = self.attr.iter(obj);
+        let next = &self.next;
+        let map = iter.map(move |v| next.traverse(v) );
+        Box::new(map)
     }
 }
 
