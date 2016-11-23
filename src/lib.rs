@@ -28,6 +28,7 @@ pub trait IterableAttr<'a, 'b: 'a, Type: 'b + ?Sized> : Attr<'a, 'b, Type> {
 pub struct Identity;
 
 pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'b, Y: ?Sized + 'a> {
+    #[inline]
     fn traverse(&'b self, val: X) -> Y;
 }
 
@@ -37,6 +38,7 @@ impl<'a, 'b: 'a, T: 'b> Traverse<'a, 'b, T, T> for Identity {
 }
 
 impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<'a, 'b, Y, Z> + 'b> Traverse<'a, 'b, X, Z> for Path<'a, 'b, X, Y, Z, A, R> {
+    #[inline]
     fn traverse(&'b self, obj: X) -> Z {
         let val = self.attr.get(obj);
         self.next.traverse(val)
@@ -44,6 +46,7 @@ impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: Attr<'a, 'b, X, Output=Y>, R: Traverse<
 }
 
 impl<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, A: IterableAttr<'a, 'b, X, Item=Y>, R: Traverse<'a, 'b, Y, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<'a, 'b, X, Y, Z, A, R> {
+    #[inline]
     fn traverse(&'b self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
         let iter = self.attr.iter(obj);
         let next = &self.next;
