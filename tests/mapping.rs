@@ -158,10 +158,14 @@ pub mod top {
 #[test]
 fn test_access() {
     let b1 = Bla { name: "foo".into() };
+    let b2 = Bla { name: "bla".into() };
 
-    let path = retrieve(bla::Name);
+    let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
+    let top = Top { foo: foo };
 
-    assert_eq!(path.traverse(&b1), "foo");
+    let path = retrieve(foo::Vector).from(top::FooField);
+
+    assert_eq!(path.traverse(&top).len(), 2);
 }
 
 #[test]

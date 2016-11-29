@@ -31,12 +31,15 @@ pub mod foo {
     #[derive(Default)]
     pub struct Batz;
     #[derive(Default)]
+    pub struct BatzMut;
+    #[derive(Default)]
     pub struct Numbers;
 
     #[derive(Default)]
     pub struct FooAttributes {
         pub bar: Bar,
         pub batz: Batz,
+        pub batz_mut: BatzMut,
         pub numbers: Numbers
     }
 
@@ -82,7 +85,7 @@ pub mod foo {
         }
     }
 
-    impl<'a> Attr<&'a mut Foo> for Batz {
+    impl<'a> Attr<&'a mut Foo> for BatzMut {
         type Output = &'a mut Bla;
 
         fn get(&self, i: &'a mut Foo) -> &'a mut Bla {
@@ -203,8 +206,7 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let path = retrieve(Bla::attrs().name).from::<&mut Foo, foo::Batz>(Foo::attrs().batz);
-//    let mut path = new_path(bla::Name).prepend(foo::Bla); <-- this fails and should be made a compile-test \o/
+    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
     let val = path.traverse(&f);
     assert_eq!(val, "foo");
@@ -223,12 +225,12 @@ fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
     {
-        let path = retrieve(Bla::attrs().name).from::<&mut Foo, foo::Batz>(Foo::attrs().batz);
+        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz_mut);
         let x = path.traverse(&mut f);
         *x = "bar".into();
     }
     {
-        let path = retrieve(Bla::attrs().name).from::<&Foo, foo::Batz>(Foo::attrs().batz);
+        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
         let y = path.traverse(&f);
         assert_eq!(y, "bar");

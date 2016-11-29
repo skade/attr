@@ -51,7 +51,7 @@ pub fn retrieve<A>(attr: A) -> Tip<A>
     }
 }
 
-impl<'a, 'b: 'a, T: 'a, O: 'a, A: Attr<T, Output=O>> Traverse<'a, 'b, T, A::Output>  for Tip<A> {
+impl<'a, 'b: 'a, T: 'a, O: 'a, A: Attr<T, Output=O>> Traverse<'a, 'b, T, A::Output> for Tip<A> {
     #[inline]
     fn traverse(&'b self, val: T) -> A::Output { self.attr.get(val) }
 }
@@ -86,9 +86,7 @@ impl<A> Tip<A> {
 
     pub fn mapped<'a, 'b: 'a, NX: 'a, NA>(self, attr: NA) -> MapPath<NA, Self>
         where A: Attr<NA::Item>,
-              NA: IterableAttr<'a, NX>,
-              <A as Attr<<NA as IterableAttr<'a, NX>>::Item>>::Output: 'a,
-              Self: Traverse<'a, 'b, NA::Item, A::Output> {
+              NA: IterableAttr<'a, NX> {
         MapPath {
             attr: attr,
             next: self,
