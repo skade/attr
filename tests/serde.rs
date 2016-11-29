@@ -7,7 +7,7 @@ use attr::IndexableAttr;
 
 use attr::Attr;
 use attr::Attributes;
-use attr::serde_impl::SerdeAttribute;
+use attr::serde::SerdeAttribute;
 
 use attr::retrieve;
 use attr::Traverse;
@@ -45,10 +45,10 @@ fn test_combine() {
         }
     }
 
-    impl Attr<Foo> for Inner {
-        type Output = Value;
+    impl<'a> Attr<&'a Foo> for Inner {
+        type Output = &'a Value;
 
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Value {
+        fn get(&self, i: &'a Foo) -> &'a Value {
             &i.inner
         }
 

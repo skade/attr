@@ -1,5 +1,7 @@
 extern crate serde_json;
 
+pub mod serde;
+
 pub trait Attr<Type: ?Sized> {
     type Output;
 
