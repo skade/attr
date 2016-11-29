@@ -58,7 +58,7 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'a mut Foo> for Bar {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Bar {
         type Output = &'a mut String;
 
         fn get(&self, i: &'a mut Foo) -> &'a mut String {
@@ -159,10 +159,13 @@ pub mod bla {
 
     #[derive(Default)]
     pub struct Name;
+    #[derive(Default)]
+    pub struct NameMut;
 
     #[derive(Default)]
     pub struct BlaAttributes {
         pub name: Name,
+        pub name_mut: NameMut,
     }
 
     impl Attributes<BlaAttributes> for Bla {
@@ -174,7 +177,7 @@ pub mod bla {
     impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bla> for Name {
         type Output = &'a str;
 
-        fn get(&self, i: &'a Bla) -> &'a str {
+        fn get(&self, i: &'b Bla) -> &'a str {
             i.name.as_ref()
         }
 
@@ -186,7 +189,7 @@ pub mod bla {
     impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Bla> for Name {
         type Output = &'a mut String;
 
-        fn get(&self, i: &'a mut Bla) -> &'a mut String {
+        fn get(&self, i: &'b mut Bla) -> &'a mut String {
             &mut i.name
         }
 
@@ -208,16 +211,24 @@ fn nested_access() {
 }
 
 #[test]
+fn simple_mutable() {
+    let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
+
+    let path = retrieve(Foo::attrs().batz);
+    assert_eq!(path.traverse(&mut f).name, "foo");
+}
+
+#[test]
 fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
     {
-        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+        let path = retrieve(Bla::attrs().name).from::<&mut Foo, foo::Batz>(Foo::attrs().batz);
         let x = path.traverse(&mut f);
         *x = "bar".into();
     }
     {
-        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+        let path = retrieve(Bla::attrs().name).from::<&Foo, foo::Batz>(Foo::attrs().batz);
 
         let y = path.traverse(&f);
         assert_eq!(y, "bar");
@@ -253,7 +264,7 @@ fn nested_filter() {
     let f2 = Foo { bar: "foobar".into(), batz: Bla { name: "bar".into() }, numbers: vec![1,2,3] };
 
     let vec = vec![f, f2];
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+    let path = retrieve(Bla::attrs().name).from::<&Foo, foo::Batz>(Foo::attrs().batz);
 
     assert_eq!(size_of(&path),0);
 

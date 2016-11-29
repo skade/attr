@@ -108,10 +108,10 @@ pub mod bla {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'a Bla> for Name {
+    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bla> for Name {
         type Output = &'a str;
 
-        fn get(&self, i: &'a Bla) -> &'a str {
+        fn get(&self, i: &'b Bla) -> &'a str {
             i.name.as_ref()
         }
 
@@ -153,6 +153,15 @@ pub mod top {
             "foo"
         }
     }
+}
+
+#[test]
+fn test_access() {
+    let b1 = Bla { name: "foo".into() };
+
+    let path = retrieve(bla::Name);
+
+    assert_eq!(path.traverse(&b1), "foo");
 }
 
 #[test]
