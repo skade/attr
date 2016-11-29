@@ -31,10 +31,10 @@ fn simple_access() {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for FooAttributeBar {
+    impl<'a> Attr<&'a Foo> for FooAttributeBar {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Foo) -> &'a str {
+        fn get(&self, i: &'a Foo) -> &'a str {
             i.bar.as_ref()
         }
 
@@ -43,10 +43,10 @@ fn simple_access() {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for FooAttributeBatz {
+    impl<'a> Attr<&'a Foo> for FooAttributeBatz {
         type Output = i32;
 
-        fn get(&self, i: &'b Foo) -> Self::Output {
+        fn get(&self, i: &'a Foo) -> i32 {
             i.batz
         }
 
@@ -69,10 +69,10 @@ fn simple_access() {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bar> for BarAttributeBatz {
+    impl<'a> Attr<&'a Bar> for BarAttributeBatz {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Bar) -> Self::Output {
+        fn get(&self, i: &'a Bar) -> Self::Output {
             i.batz.as_ref()
         }
 
@@ -81,10 +81,10 @@ fn simple_access() {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Bar> for BarAttributeBatz {
+    impl<'a> Attr<&'a mut Bar> for BarAttributeBatz {
         type Output = &'a mut String;
 
-        fn get(&self, i: &'b mut Bar) -> Self::Output {
+        fn get(&self, i: &'a mut Bar) -> Self::Output {
              &mut i.batz
         }
 

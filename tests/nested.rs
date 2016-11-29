@@ -46,10 +46,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Bar {
+    impl<'a> Attr<&'a Foo> for Bar {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Foo) -> &'a str {
+        fn get(&self, i: &'a Foo) -> &'a str {
             i.bar.as_ref()
         }
 
@@ -58,7 +58,7 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Bar {
+    impl<'a> Attr<&'a mut Foo> for Bar {
         type Output = &'a mut String;
 
         fn get(&self, i: &'a mut Foo) -> &'a mut String {
@@ -70,10 +70,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Batz {
+    impl<'a> Attr<&'a Foo> for Batz {
         type Output = &'a Bla;
 
-        fn get(&self, i: &'b Foo) -> &'a Bla {
+        fn get(&self, i: &'a Foo) -> &'a Bla {
             &i.batz
         }
 
@@ -82,10 +82,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Batz {
+    impl<'a> Attr<&'a mut Foo> for Batz {
         type Output = &'a mut Bla;
 
-        fn get(&self, i: &'b mut Foo) -> &'a mut Bla {
+        fn get(&self, i: &'a mut Foo) -> &'a mut Bla {
             &mut i.batz
         }
 
@@ -94,10 +94,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Numbers {
+    impl<'a> Attr<&'a Foo> for Numbers {
         type Output = &'a[i32];
 
-        fn get(&self, i: &'b Foo) -> &'a[i32] {
+        fn get(&self, i: &'a Foo) -> &'a[i32] {
             i.numbers.as_ref()
         }
 
@@ -106,10 +106,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Foo> for Numbers {
+    impl<'a> Attr<&'a mut Foo> for Numbers {
         type Output = &'a mut Vec<i32>;
 
-        fn get(&self, i: &'b mut Foo) -> &'a mut Vec<i32> {
+        fn get(&self, i: &'a mut Foo) -> &'a mut Vec<i32> {
             &mut i.numbers
         }
 
@@ -118,34 +118,34 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b Foo, usize> for Numbers {
+    impl<'a> IndexableAttr<&'a Foo, usize> for Numbers {
         type Output = i32;
 
-        fn at(&self, i: &'b Foo, idx: usize) -> i32 {
+        fn at(&self, i: &'a Foo, idx: usize) -> i32 {
             self.get(i)[idx]
         }
     }
 
-    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b mut Foo, usize> for Numbers {
+    impl<'a> IndexableAttr<&'a mut Foo, usize> for Numbers {
         type Output = &'a mut i32;
 
-        fn at(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
+        fn at(&self, i: &'a mut Foo, idx: usize) -> &'a mut i32 {
             unsafe { self.get(i).get_unchecked_mut(idx) }
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b Foo> for Numbers {
+    impl<'a> IterableAttr<'a, &'a Foo> for Numbers {
         type Item = &'a i32;
 
-        fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
+        fn iter(&self, i: &'a Foo) -> Box<Iterator<Item=&'a i32> + 'a> {
             Box::new(self.get(i).iter())
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b mut Foo> for Numbers {
+    impl<'a> IterableAttr<'a, &'a mut Foo> for Numbers {
         type Item = &'a mut i32;
 
-        fn iter(&self, i: &'b mut Foo) -> Box<Iterator<Item=&'a mut i32> +'a> {
+        fn iter(&self, i: &'a mut Foo) -> Box<Iterator<Item=&'a mut i32> +'a> {
             Box::new(self.get(i).iter_mut())
         }
     }
@@ -174,10 +174,10 @@ pub mod bla {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bla> for Name {
+    impl<'a> Attr<&'a Bla> for Name {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Bla) -> &'a str {
+        fn get(&self, i: &'a Bla) -> &'a str {
             i.name.as_ref()
         }
 
@@ -186,10 +186,10 @@ pub mod bla {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b mut Bla> for Name {
+    impl<'a> Attr<&'a mut Bla> for Name {
         type Output = &'a mut String;
 
-        fn get(&self, i: &'b mut Bla) -> &'a mut String {
+        fn get(&self, i: &'a mut Bla) -> &'a mut String {
             &mut i.name
         }
 
@@ -203,7 +203,7 @@ pub mod bla {
 fn nested_access() {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
-    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
+    let path = retrieve(Bla::attrs().name).from::<&mut Foo, foo::Batz>(Foo::attrs().batz);
 //    let mut path = new_path(bla::Name).prepend(foo::Bla); <-- this fails and should be made a compile-test \o/
 
     let val = path.traverse(&f);

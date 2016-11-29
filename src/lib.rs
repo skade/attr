@@ -1,6 +1,6 @@
 extern crate serde_json;
 
-pub trait Attr<Type: ?Sized + 'b> {
+pub trait Attr<Type: ?Sized> {
     type Output;
 
     fn name(&self) -> &str;
@@ -11,19 +11,19 @@ pub trait Attributes<AttributeType> {
     fn attrs() -> AttributeType;
 }
 
-pub trait IndexableAttr<'a, 'b: 'a, Type: 'b + ?Sized, Idx: ?Sized> : Attr<'a, 'b, Type> {
-    type Output: 'a;
+pub trait IndexableAttr<Type: ?Sized, Idx: ?Sized> : Attr<Type> {
+    type Output;
 
-    fn at(&self, i: Type, idx: Idx) -> <Self as IndexableAttr<'a, 'b, Type, Idx>>::Output;
+    fn at(&self, i: Type, idx: Idx) -> <Self as IndexableAttr<Type, Idx>>::Output;
 }
 
-pub trait IterableAttr<'a, 'b: 'a, Type: ?Sized + 'b> : Attr<'a, 'b, Type> {
+pub trait IterableAttr<'a, Type: ?Sized> : Attr<Type> {
     type Item: 'a;
 
     fn iter(&self, i: Type) -> Box<Iterator<Item=Self::Item> + 'a>;
 }
 
-pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'b, Y: ?Sized + 'a> {
+pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'a, Y: ?Sized + 'a> {
     #[inline]
     fn traverse(&'b self, val: X) -> Y;
 }
@@ -51,12 +51,12 @@ pub fn retrieve<A>(attr: A) -> Tip<A>
     }
 }
 
-impl<'a, 'b: 'a, T: 'b, A: Attr<'a, 'b, T>> Traverse<'a, 'b, T, A::Output> for Tip<A> {
+impl<'a, 'b: 'a, T: 'a, O: 'a, A: Attr<T, Output=O>> Traverse<'a, 'b, T, A::Output>  for Tip<A> {
     #[inline]
     fn traverse(&'b self, val: T) -> A::Output { self.attr.get(val) }
 }
 
-impl<'a, 'b: 'a, X: 'b, Z: 'a, A: Attr<'b, 'b, X>, R: Traverse<'a, 'b, A::Output, Z>> Traverse<'a, 'b, X, Z> for Path<A, R> {
+impl<'a, 'b: 'a, X: 'a, Z: 'a, O: 'a, A: Attr<X, Output=O>, R: Traverse<'a, 'b, A::Output, Z>> Traverse<'a, 'b, X, Z> for Path<A, R> {
     #[inline]
     fn traverse(&'b self, obj: X) -> Z {
         let val = self.attr.get(obj);
@@ -64,7 +64,7 @@ impl<'a, 'b: 'a, X: 'b, Z: 'a, A: Attr<'b, 'b, X>, R: Traverse<'a, 'b, A::Output
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Z: 'a, A: IterableAttr<'b, 'b, X>, R: Traverse<'a, 'b, A::Item, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<A, R> {
+impl<'a, 'b: 'a, X: 'a, Z: 'a, A: IterableAttr<'a, X>, R: Traverse<'a, 'b, A::Item, Z>> Traverse<'a, 'b, X, Box<Iterator<Item=Z> + 'a>> for MapPath<A, R> {
     #[inline]
     fn traverse(&'b self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
         let iter = self.attr.iter(obj);
@@ -75,18 +75,19 @@ impl<'a, 'b: 'a, X: 'b, Z: 'a, A: IterableAttr<'b, 'b, X>, R: Traverse<'a, 'b, A
 }
 
 impl<A> Tip<A> {
-    pub fn from<'a, 'b: 'a, NX: 'b, NA>(self, attr: NA) -> Path<NA, Self>
-        where A: Attr<'b, 'b, NA::Output>,
-              NA: Attr<'b, 'b, NX> {
+    pub fn from<'a, NX: 'a, NA>(self, attr: NA) -> Path<NA, Self>
+        where A: Attr<NA::Output>,
+              NA: Attr<NX> {
         Path {
             attr: attr,
             next: self,
         }
     }
 
-    pub fn mapped<'a, 'b: 'a, NX: 'b, NA>(self, attr: NA) -> MapPath<NA, Self>
-        where A: Attr<'b, 'b, NA::Item>,
-              NA: IterableAttr<'b, 'b, NX>,
+    pub fn mapped<'a, 'b: 'a, NX: 'a, NA>(self, attr: NA) -> MapPath<NA, Self>
+        where A: Attr<NA::Item>,
+              NA: IterableAttr<'a, NX>,
+              <A as Attr<<NA as IterableAttr<'a, NX>>::Item>>::Output: 'a,
               Self: Traverse<'a, 'b, NA::Item, A::Output> {
         MapPath {
             attr: attr,
@@ -96,10 +97,12 @@ impl<A> Tip<A> {
 }
 
 impl<A, R> Path<A, R> {
-    pub fn from<'a, 'b: 'a, NX: 'b, Z: 'a, NA>(self, attr: NA) -> Path<NA, Self>
-        where A: Attr<'b, 'b, NA::Output>,
+    pub fn from<'a, 'b: 'a, NX: 'a, Z: 'a, NA>(self, attr: NA) -> Path<NA, Self>
+        where A: Attr<NA::Output>,
               R: Traverse<'a, 'b, A::Output, Z>,
-              NA: Attr<'b, 'b, NX>,
+              NA: Attr<NX>,
+              <A as Attr<<NA as Attr<NX>>::Output>>::Output: 'a,
+              <NA as Attr<NX>>::Output: 'a,
               Self: Traverse<'a, 'b, NA::Output, Z> {
         Path {
             attr: attr,
@@ -107,10 +110,10 @@ impl<A, R> Path<A, R> {
         }
     }
 
-    pub fn mapped<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, NX: 'b, NY: 'b, NZ: 'a, NA>(self, attr: NA) -> MapPath<NA, Self>
-        where A: Attr<'a, 'b, X, Output=Y>,
+    pub fn mapped<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, NX: 'a, NY: 'a, NZ: 'a, NA>(self, attr: NA) -> MapPath<NA, Self>
+        where A: Attr<X, Output=Y>,
               R: Traverse<'a, 'b, Y, Z>,
-              NA: IterableAttr<'a, 'b, NX, Item=NY>,
+              NA: IterableAttr<'a, NX, Item=NY>,
               Self: Traverse<'a, 'b, NY, NZ> {
         MapPath {
             attr: attr,
@@ -121,9 +124,9 @@ impl<A, R> Path<A, R> {
 
 impl<A, R> MapPath<A, R> {
     pub fn from<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'a, NX: 'b, NY: 'b, NA>(self, attr: NA) -> Path<NA, Self>
-        where A: IterableAttr<'a, 'b, X, Item=Y>,
+        where A: IterableAttr<'a, X, Item=Y>,
               R: Traverse<'a, 'b, Y, Z>,
-              NA: Attr<'a, 'b, NX, Output=NY>,
+              NA: Attr<NX, Output=NY>,
               Self: Traverse<'a, 'b, NY, Box<std::iter::Iterator<Item=Z>>>
     {
         Path {

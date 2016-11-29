@@ -46,10 +46,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Bar {
+    impl<'a> Attr<&'a Foo> for Bar {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Foo) -> Self::Output {
+        fn get(&self, i: &'a Foo) -> Self::Output {
             i.bar.as_ref()
         }
 
@@ -58,10 +58,10 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Foo> for Vector {
+    impl<'a> Attr<&'a Foo> for Vector {
         type Output = &'a [Bla];
 
-        fn get(&self, i: &'b Foo) -> &'a [Bla] {
+        fn get(&self, i: &'a Foo) -> &'a [Bla] {
             i.vector.as_ref()
         }
 
@@ -70,18 +70,18 @@ pub mod foo {
         }
     }
 
-    impl<'a, 'b : 'a> IndexableAttr<'a, 'b, &'b Foo, usize> for Vector {
+    impl<'a> IndexableAttr<&'a Foo, usize> for Vector {
         type Output = &'a Bla;
 
-        fn at(&self, i: &'b Foo, idx: usize) -> &'a Bla {
+        fn at(&self, i: &'a Foo, idx: usize) -> &'a Bla {
             unsafe { self.get(i).get_unchecked(idx) }
         }
     }
 
-    impl<'a, 'b: 'a> IterableAttr<'a, 'b, &'b Foo> for Vector {
+    impl<'a> IterableAttr<'a, &'a Foo> for Vector {
         type Item = &'a Bla;
 
-        fn iter(&self, i: &'b Foo) -> Box<Iterator<Item=&'a Bla> + 'a> {
+        fn iter(&self, i: &'a Foo) -> Box<Iterator<Item=&'a Bla> + 'a> {
             Box::new(self.get(i).iter())
         }
     }
@@ -108,10 +108,10 @@ pub mod bla {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Bla> for Name {
+    impl<'a> Attr<&'a Bla> for Name {
         type Output = &'a str;
 
-        fn get(&self, i: &'b Bla) -> &'a str {
+        fn get(&self, i: &'a Bla) -> &'a str {
             i.name.as_ref()
         }
 
@@ -142,10 +142,10 @@ pub mod top {
         }
     }
 
-    impl<'a, 'b: 'a> Attr<'a, 'b, &'b Top> for FooField {
+    impl<'a> Attr<&'a Top> for FooField {
         type Output = &'a Foo;
 
-        fn get(&self, i: &'b Top) -> &'a Foo {
+        fn get(&self, i: &'a Top) -> &'a Foo {
             &i.foo
         }
 
