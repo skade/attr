@@ -34,10 +34,6 @@ pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'a, Y: ?Sized + 'a> {
 
 pub struct Identity;
 
-pub struct Tip<A> {
-    attr: A,
-}
-
 pub struct Path<X, Z, A: Attr<X>, R> {
     attr: A,
     next: R,
