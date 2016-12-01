@@ -23,6 +23,18 @@ fn test_attr() {
     assert_eq!(attr_y.at(&obj, 1), &Value::U64(2));
 }
 
+#[test]
+fn test_multiple_attr() {
+    let obj: Value = json::from_str(r#"{"x": 1, "y": { "z": 1 } }"#).unwrap();
+
+    let attr_z = SerdeAttribute::new("z");
+    let attr_y = SerdeAttribute::new("y");
+
+    let path = retrieve(attr_z).from(attr_y);
+
+    assert_eq!(path.traverse(&obj), &Value::U64(1));
+}
+
 struct Foo {
     inner: Value
 }

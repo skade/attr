@@ -31,15 +31,12 @@ pub mod foo {
     #[derive(Default)]
     pub struct Batz;
     #[derive(Default)]
-    pub struct BatzMut;
-    #[derive(Default)]
     pub struct Numbers;
 
     #[derive(Default)]
     pub struct FooAttributes {
         pub bar: Bar,
         pub batz: Batz,
-        pub batz_mut: BatzMut,
         pub numbers: Numbers
     }
 
@@ -85,7 +82,7 @@ pub mod foo {
         }
     }
 
-    impl<'a> Attr<&'a mut Foo> for BatzMut {
+    impl<'a> Attr<&'a mut Foo> for Batz {
         type Output = &'a mut Bla;
 
         fn get(&self, i: &'a mut Foo) -> &'a mut Bla {
@@ -225,7 +222,7 @@ fn nested_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
     {
-        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz_mut);
+        let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
         let x = path.traverse(&mut f);
         *x = "bar".into();
     }
@@ -266,7 +263,7 @@ fn nested_filter() {
     let f2 = Foo { bar: "foobar".into(), batz: Bla { name: "bar".into() }, numbers: vec![1,2,3] };
 
     let vec = vec![f, f2];
-    let path = retrieve(Bla::attrs().name).from::<&Foo, foo::Batz>(Foo::attrs().batz);
+    let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
     assert_eq!(size_of(&path),0);
 
