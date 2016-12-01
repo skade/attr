@@ -3,13 +3,14 @@ extern crate attr;
 
 use serde_json as json;
 use serde_json::value::Value;
-use attr::IndexableAttr;
 
 use attr::Attr;
+use attr::InsecureAttr;
+use attr::InsecureIndexableAttr;
 use attr::Attributes;
 use attr::serde::SerdeAttribute;
 
-use attr::retrieve;
+use attr::retrieve_insecure;
 use attr::Traverse;
 
 #[test]
@@ -19,8 +20,8 @@ fn test_attr() {
     let attr_x = SerdeAttribute::new("x");
     let attr_y = SerdeAttribute::new("y");
 
-    assert_eq!(attr_x.get(&obj), &Value::U64(1));
-    assert_eq!(attr_y.at(&obj, 1), &Value::U64(2));
+    assert_eq!(attr_x.get(&obj).unwrap(), &Value::U64(1));
+    assert_eq!(attr_y.at(&obj, 1).unwrap(), &Value::U64(2));
 }
 
 #[test]
@@ -30,9 +31,9 @@ fn test_multiple_attr() {
     let attr_z = SerdeAttribute::new("z");
     let attr_y = SerdeAttribute::new("y");
 
-    let path = retrieve(attr_z).from(attr_y);
+    let path = retrieve_insecure(attr_z).try(attr_y);
 
-    assert_eq!(path.traverse(&obj), &Value::U64(1));
+    assert_eq!(path.traverse(&obj), Ok(Ok(&Value::U64(1))));
 }
 
 struct Foo {
@@ -73,7 +74,7 @@ fn test_combine() {
     let obj = Foo { inner: val };
     let attr = SerdeAttribute::new("x");
 
-    let path = retrieve(attr).from(Foo::attrs().inner);
+    let path = retrieve_insecure(attr).from(Foo::attrs().inner);
 
-    assert_eq!(path.traverse(&obj), &Value::U64(1));
+    assert_eq!(path.traverse(&obj), Ok(&Value::U64(1)));
 }
