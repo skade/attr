@@ -1,6 +1,6 @@
 # attr
 
-`attr` is a Library to provide external access to a datastructure through a
+`attr` is a library to provide external access to a datastructure through a
 typed path object, using all type information known about the data
 structure at hand.
 
@@ -196,9 +196,6 @@ pub mod bla {
 ## Currently open things
 
 * Unify the retrieval interface between fields and paths, if possible
-* Make all parts return Results, so that walking may fail
-* Possibly only if things may fail
-* More fancy path combinators!
 
 ## Acknowledgements
 
