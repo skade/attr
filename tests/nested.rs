@@ -267,7 +267,7 @@ fn nested_filter() {
 
     assert_eq!(size_of(&path),0);
 
-    let filtered = vec.iter().filter(|foo| path.traverse(*foo) == "foo" ).collect::<Vec<_>>();
+    let filtered = vec.iter().filter(|f| path.traverse(*f) == "foo" ).collect::<Vec<_>>();
 
     assert_eq!(filtered.len(), 1);
 }

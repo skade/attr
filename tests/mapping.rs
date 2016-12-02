@@ -155,28 +155,28 @@ pub mod top {
     }
 }
 
-//#[test]
-//fn test_access() {
-//    let b1 = Bla { name: "foo".into() };
-//    let b2 = Bla { name: "bla".into() };
-//
-//    let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
-//    let top = Top { foo: foo };
-//
-//    let path = retrieve(foo::Vector).from(top::FooField);
-//
-//    assert_eq!(path.traverse(&top).len(), 2);
-//}
+#[test]
+fn test_access() {
+    let b1 = Bla { name: "foo".into() };
+    let b2 = Bla { name: "bla".into() };
+
+    let f = Foo { bar: "bar".into(), vector: vec![b1,b2] };
+    let top = Top { foo: f };
+
+    let path = retrieve(foo::Vector).from(top::FooField);
+
+    assert_eq!(path.traverse(&top).len(), 2);
+}
 
 #[test]
 fn test_mapped() {
     let b1 = Bla { name: "foo".into() };
     let b2 = Bla { name: "bla".into() };
 
-    let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
+    let f = Foo { bar: "bar".into(), vector: vec![b1,b2] };
     let path = retrieve(bla::Name).mapped(foo::Vector);
 
-    let result = path.traverse(&foo).collect::<Vec<_>>();
+    let result = path.traverse(&f).collect::<Vec<_>>();
     assert_eq!(result, vec!["foo", "bla"]);
 }
 
@@ -185,8 +185,8 @@ fn test_complex_mapped() {
     let b1 = Bla { name: "foo".into() };
     let b2 = Bla { name: "bla".into() };
 
-    let foo = Foo { bar: "bar".into(), vector: vec![b1,b2] };
-    let top = Top { foo: foo };
+    let f = Foo { bar: "bar".into(), vector: vec![b1,b2] };
+    let top = Top { foo: f };
 
     let path = retrieve(bla::Name).mapped(foo::Vector).from(top::FooField);
 
