@@ -129,9 +129,14 @@ Currently, this library also provides `IndexableAttr`, for attributes that allow
 
 Also, it ships with additional attribute types called `Insecure*` for expressing attributes where retrieval may fail (e.g. for access of maps). They return Results instead of plain values.
 
+# Further reading
+
+To see a sketch implementation of attributes working on serde_json, refer to the test suite.
+
 ## Currently open things
 
 * Unify the retrieval interface between attributes and paths, if possible
+* Find a good interface for returning results from both secure and insecure paths
 
 ## Acknowledgements
 

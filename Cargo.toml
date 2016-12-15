@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Florian Gilcher <florian.gilcher@asquera.de>"]
 license = "MIT"
 
-[dependencies]
+[dev-dependencies]
 serde_json = "0.8.1"

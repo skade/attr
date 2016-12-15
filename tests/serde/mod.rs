@@ -1,7 +1,7 @@
 use serde_json::value::Value;
-use super::InsecureAttr;
-use super::InsecureIndexableAttr;
-use super::Result;
+use attr::InsecureAttr;
+use attr::InsecureIndexableAttr;
+use attr::Result;
 
 pub struct SerdeAttribute<'a> {
     name: &'a str

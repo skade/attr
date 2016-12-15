@@ -1,10 +1,6 @@
-extern crate serde_json;
-
-pub mod serde;
-
 use std::marker::PhantomData;
 
-type Result<X> = std::result::Result<X, String>;
+pub type Result<X> = std::result::Result<X, String>;
 
 pub trait Attr<Type: ?Sized> {
     type Output;

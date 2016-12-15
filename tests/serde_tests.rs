@@ -1,6 +1,10 @@
 extern crate serde_json;
 extern crate attr;
 
+mod serde;
+
+use serde::*;
+
 use serde_json as json;
 use serde_json::value::Value;
 
@@ -8,7 +12,6 @@ use attr::Attr;
 use attr::InsecureAttr;
 use attr::InsecureIndexableAttr;
 use attr::Attributes;
-use attr::serde::SerdeAttribute;
 
 use attr::retrieve_insecure;
 use attr::Traverse;
