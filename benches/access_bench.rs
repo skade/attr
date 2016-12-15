@@ -217,7 +217,7 @@ fn direct_access(f: &Foo) -> &str {
 #[bench]
 fn through_path(b: &mut Bencher) {
     let f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![1,2,3] };
-    b.iter(|| black_box(path_access(&f)) );
+    b.iter(|| black_box(path_access(&f).unwrap()) );
 }
 
 #[inline]
