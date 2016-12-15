@@ -1,7 +1,6 @@
 extern crate attr;
 
 use attr::Attr;
-use attr::Attributes;
 
 pub struct Foo {
     bar: String,
@@ -18,6 +17,10 @@ fn simple_access() {
     struct FooAttributeBar;
     #[derive(Default)]
     struct FooAttributeBatz;
+
+    trait Attributes<AttributeType> {
+        fn attrs() -> AttributeType;
+    }
 
     #[derive(Default)]
     struct FooAttributes {

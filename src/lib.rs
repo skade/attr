@@ -16,10 +16,6 @@ pub trait InsecureAttr<Type: ?Sized> {
     fn get(&self, i: Type) -> Result<Self::Output>;
 }
 
-pub trait Attributes<AttributeType> {
-    fn attrs() -> AttributeType;
-}
-
 pub trait IndexableAttr<Type: ?Sized, Idx: ?Sized> : Attr<Type>{
     type Output;
 

@@ -105,6 +105,28 @@ Every attribute is bound to a specific type, for example, this attribute only re
 
 Attributes externalise data access by moving it into a seperate type. This allows us to combine them. Attribute types are zero-sized unless needed, and have no runtime cost.
 
+## Being generic over mutability
+
+Attributes can be generic over mutability. Just provide two implementations, `rustc` will infer which one it needs:
+
+```rust
+struct DataAttribute;
+
+impl<'a> Attr<&'a User> for DataAttribute {
+    type Output = &'a Data;
+
+    fn name(&self) -> &'static str { "data" }
+    fn get(&self, u: &'a User) -> &'a Data { &u.data }
+}
+
+impl<'a> Attr<&'a mut User> for DataAttribute {
+    type Output = &'a mut Data;
+
+    fn name(&self) -> &'static str { "data" }
+    fn get(&self, u: &'a User) -> &'a mut Data { &u.data }
+}
+```
+
 ## Paths
 
 Attributes can be combined into _access paths_, allowing to express complex access strategies in a safe manner. Paths are initially constructed through the `retrieve` function, and then chained with additional operations. Path construction happens _inside out_, which makes inference easy.
@@ -114,6 +136,12 @@ let path = retrieve(EmailAttribute).from(DataAttribute)
 ```
 
 This constructs a path that, on use, will retrieve the `data` field from a `User` using `DataAttribute` and then the `email` field from the resulting `Data` using `EmailAttribute` and return the result.
+
+Paths are type-safe, so this will fail with a compiler error:
+
+```rust
+let path = retrieve(DataAttribute).from(EmailAttribute)
+```
 
 Access happens by calling the `traverse` method of the path with the object to work on:
 
@@ -125,9 +153,19 @@ Paths have the combined size of all attributes they hold. This means that replac
 
 # Additional access strategies
 
-Currently, this library also provides `IndexableAttr`, for attributes that allow indexed access (such as a vector) and `IterableAttr`, for attributes that can be iterated through (such as vectors, again).
+Currently, this library also provides `IndexableAttr`, for attributes that allow indexed access (such as a vector) and `IterableAttr`, for attributes that can be iterated through (such as vectors, again). Path construction might differ for these, for example, paths through iterable attributes need to be constructed like this:
+
+```rust
+let path = retrieve(NameAttribute).mapped(VectorAttribute).from(FooAttribute);
+```
+
+This would return an Iterator over all names contained in structurs wrapped in a vector, that is found behind a field named `foo`. See `tests/mapping.rs` for full examples.
 
 Also, it ships with additional attribute types called `Insecure*` for expressing attributes where retrieval may fail (e.g. for access of maps). They return Results instead of plain values.
+
+# Missing
+
+This library does not implement any macros to ease the boilerplate or implement any conventions to make group attributes meaningfully (for example, wrapping them in module makes sense). This will happen in other libraries.
 
 # Further reading
 
@@ -137,6 +175,7 @@ To see a sketch implementation of attributes working on serde_json, refer to the
 
 * Unify the retrieval interface between attributes and paths, if possible
 * Find a good interface for returning results from both secure and insecure paths
+* Proper error type, giving good information about where the failure occured
 
 ## Acknowledgements
 

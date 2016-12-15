@@ -3,7 +3,10 @@ extern crate attr;
 use attr::retrieve;
 use attr::IndexableAttr;
 use attr::Traverse;
-use attr::Attributes;
+
+trait Attributes<AttributeType> {
+    fn attrs() -> AttributeType;
+}
 
 #[derive(Debug)]
 pub struct Foo {
@@ -21,7 +24,7 @@ pub mod foo {
     use attr::Attr;
     use attr::IndexableAttr;
     use attr::IterableAttr;
-    use attr::Attributes;
+    use super::Attributes;
 
     use super::Foo;
     use super::Bla;
@@ -153,7 +156,7 @@ pub mod foo {
 
 pub mod bla {
     use attr::Attr;
-    use attr::Attributes;
+    use super::Attributes;
 
     use super::Bla;
 

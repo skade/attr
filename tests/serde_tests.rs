@@ -11,7 +11,6 @@ use serde_json::value::Value;
 use attr::Attr;
 use attr::InsecureAttr;
 use attr::InsecureIndexableAttr;
-use attr::Attributes;
 
 use attr::retrieve_insecure;
 use attr::Traverse;
@@ -50,17 +49,6 @@ fn test_combine() {
     #[derive(Default)]
     struct Inner;
 
-    #[derive(Default)]
-    struct FooAttributes {
-        inner: Inner,
-    }
-
-    impl Attributes<FooAttributes> for Foo {
-        fn attrs() -> FooAttributes {
-            FooAttributes::default()
-        }
-    }
-
     impl<'a> Attr<&'a Foo> for Inner {
         type Output = &'a Value;
 
@@ -77,7 +65,7 @@ fn test_combine() {
     let obj = Foo { inner: val };
     let attr = SerdeAttribute::new("x");
 
-    let path = retrieve_insecure(attr).from(Foo::attrs().inner);
+    let path = retrieve_insecure(attr).from(Inner);
 
     assert_eq!(path.traverse(&obj), Ok(&Value::U64(1)));
 }
