@@ -7,205 +7,141 @@ structure at hand.
 This allows expressing queries on data structures not currently at hand without
 retrieving a handle on the data structure itself.
 
-It is currently in experimentation phase, but runs on stable and nightly.
+`attr` decouples access from data, by giving you ways to describe paths through
+data without exporting the exact structure of the data.
 
-The current goal is to make the API convenient and uniform and the definition
-of all user-facing types easy to do by hand. Definitions are still rather
-verbose, but convenience macros and compiler plugins are currently not in scope
-(but maybe some soul more interested in those will provide one? ;) )
+For that, it describes traversible paths that work on given types and return
+specific values. `attr` makes creation of these paths painless and supported
+by the given type information.
+
+The library is "pay what you use", simple pointer dereferencing paths cost
+as much as hand-written, direct code.
 
 As an example, an interface to the serde_json library is provided.
 
-## Example
+## Motivating Example
+
+Let's consider a generic validator: instead of being generic over the types it validates, it would be convenient to make it generic over the way it retrieves the data to validate.
+
+This has multiple advantages:
+* The validator implementation does not need to know the types it validates
+* It avoids the orphan rule: the access operation is always custom and can be local
+* If the structure of the type under validation changes, the validator implementation does not need to be changed
 
 ```rust
-fn edit_name() {
-    let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
+struct PrefixValidator<P> {
+    pattern: String,
+    path: P
+}
 
-    let path = retrieve_mut(bla::Name).from(foo::Batz);
-
+impl<P> PrefixValidator<P> {
+    fn validate<'a, 'b: 'a, T: 'b>(&'a self, t: T) -> bool
+        where P: Traverse<'a, 'b, T, &'b str>
     {
-        let x = path.traverse_mut(&mut f);
-        *x = "bar".into();
-    }
-    {
-        let path = retrieve(bla::Name).from(foo::Batz);
-
-        let y = path.traverse(&f);
-        assert_eq!(y, "bar");
+        self.path.traverse(t).starts_with(&self.pattern)
     }
 }
-```
 
-The construction of the following path would fail with a type error:
+fn main() {
+    let user = User { data: Data { email: "flo@andersground.net".into() }};
+    assert!(validate(&user));
+}
 
-```rust
-retrieve(foo::Batz).from(bla::Name);
+fn validate(u: &User) -> bool {
+    let path = retrieve(EmailAttribute).from(DataAttribute);
+    let validator = PrefixValidator { pattern: "flo".into(), path: path };
+
+    validator.validate(u)
+}
 ```
 
 ## Underlying definitions
 
+See `examples/validation.rs` for the full example.
+
+## Attributes
+
 The library works by defining an accessor struct implementing the `Attr<Type>`
 trait per access strategy. In this case, one per for every known field of the
-data structure. Defining those is currently busywork. In the case of Foo and Bar,
-the definition looks like follows. Field accessors get grouped into a seperate struct for convenience.
+data structure.
 
 ```rust
-pub mod foo {
-    use attr::Attr;
-    use attr::AttrMut;
-    use attr::IndexableAttr;
-    use attr::IndexableAttrMut;
-    use attr::Attributes;
+extern crate attr;
 
-    use super::Foo;
-    use super::Bla;
+use attr::*;
 
-    #[derive(Default)]
-    pub struct Bar;
-    #[derive(Default)]
-    pub struct Batz;
-    #[derive(Default)]
-    pub struct Numbers;
-
-    #[derive(Default)]
-    pub struct FooAttributes {
-        pub bar: Bar,
-        pub batz: Batz,
-        pub numbers: Numbers
-    }
-
-    impl Attributes<FooAttributes> for Foo {
-        fn attrs() -> FooAttributes {
-            FooAttributes::default()
-        }
-    }
-
-    impl Attr<Foo> for Bar {
-        type Output = String;
-
-        fn get<'a, >(&self, i: &'a Foo) -> &'a String {
-            &i.bar
-        }
-
-        fn name(&self) -> &'static str {
-            "bar"
-        }
-    }
-
-    impl AttrMut<Foo> for Bar {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut String {
-            &mut i.bar
-        }
-    }
-
-    impl Attr<Foo> for Batz {
-        type Output = Bla;
-
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Bla {
-            &i.batz
-        }
-
-        fn name(&self) -> &'static str {
-            "batz"
-        }
-    }
-
-    impl AttrMut<Foo> for Batz {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Bla {
-            &mut i.batz
-        }
-    }
-
-    impl Attr<Foo> for Numbers {
-        type Output = Vec<i32>;
-
-        fn get<'a, >(&self, i: &'a Foo) -> &'a Vec<i32> {
-            &i.numbers
-        }
-
-        fn name(&self) -> &'static str {
-            "numbers"
-        }
-    }
-
-    impl AttrMut<Foo> for Numbers {
-        fn get_mut<'a, >(&self, i: &'a mut Foo) -> &'a mut Vec<i32> {
-            &mut i.numbers
-        }
-    }
-
-  impl<'a, 'b : 'a> IndexableAttr<'a, 'b, Foo, usize> for Numbers {
-      type Output = i32;
-
-      fn at(&self, i: &'b Foo, idx: usize) -> &'a i32 {
-          &self.get(i)[idx]
-      }
-  }
-
-  impl<'a, 'b : 'a> IndexableAttrMut<'a, 'b, Foo, usize> for Numbers {
-      type Output = i32;
-
-      fn at_mut(&self, i: &'b mut Foo, idx: usize) -> &'a mut i32 {
-          &mut self.get_mut(i)[idx]
-      }
-  }
+struct Data {
+    email: String
 }
 
-pub mod bla {
-    use attr::Attr;
-    use attr::AttrMut;
-    use attr::Attributes;
+struct User {
+    data: Data,
+}
 
-    use super::Bla;
+struct DataAttribute;
 
-    #[derive(Default)]
-    pub struct Name;
+impl<'a> Attr<&'a User> for DataAttribute {
+    type Output = &'a Data;
 
-    #[derive(Default)]
-    pub struct BlaAttributes {
-        pub name: Name,
-    }
+    fn name(&self) -> &'static str { "data" }
+    fn get(&self, u: &'a User) -> &'a Data { &u.data }
+}
 
-    impl Attributes<BlaAttributes> for Bla {
-        fn attrs() -> BlaAttributes {
-            BlaAttributes::default()
-        }
-    }
+struct EmailAttribute;
 
-    impl Attr<Bla> for Name {
-        type Output = String;
+impl<'a> Attr<&'a Data> for EmailAttribute {
+    type Output = &'a str;
 
-        fn get<'a, >(&self, i: &'a Bla) -> &'a String {
-            &i.name
-        }
-
-        fn name(&self) -> &'static str {
-            "name"
-        }
-    }
-
-    impl AttrMut<Bla> for Name {
-        fn get_mut<'a, >(&self, i: &'a mut Bla) -> &'a mut String {
-            &mut i.name
-        }
-    }
+    fn name(&self) -> &'static str { "email" }
+    fn get(&self, d: &'a Data) -> &'a str { &d.email }
 }
 ```
 
+Attributes are ways to retrieve a piece of a structure. Note that while this is generally a reference, it doesn't have to be.
+
+All attributes need a name for debugging and diagnostics purposes.
+
+Every attribute is bound to a specific type, for example, this attribute only retrieves data from the `User` type.
+
+Attributes externalise data access by moving it into a seperate type. This allows us to combine them. Attribute types are zero-sized unless needed, and have no runtime cost.
+
+## Paths
+
+Attributes can be combined into _access paths_, allowing to express complex access strategies in a safe manner. Paths are initially constructed through the `retrieve` function, and then chained with additional operations. Path construction happens _inside out_, which makes inference easy.
+
+```rust
+let path = retrieve(EmailAttribute).from(DataAttribute)
+```
+
+This constructs a path that, on use, will retrieve the `data` field from a `User` using `DataAttribute` and then the `email` field from the resulting `Data` using `EmailAttribute` and return the result.
+
+Access happens by calling the `traverse` method of the path with the object to work on:
+
+```
+let email = path.traverse(&user);
+```
+
+Paths have the combined size of all attributes they hold. This means that replacing standard pointer access through access with a path does not incur a runtime cost.
+
+# Additional access strategies
+
+Currently, this library also provides `IndexableAttr`, for attributes that allow indexed access (such as a vector) and `IterableAttr`, for attributes that can be iterated through (such as vectors, again).
+
+Also, it ships with additional attribute types called `Insecure*` for expressing attributes where retrieval may fail (e.g. for access of maps). They return Results instead of plain values.
+
 ## Currently open things
 
-* Unify the retrieval interface between fields and paths, if possible
+* Unify the retrieval interface between attributes and paths, if possible
 
 ## Acknowledgements
 
-* The non-uniform List used to construct paths is adapted from [Link](src.codes) and based on a pattern devised by Tomaka.
+* The non-uniform List used to construct paths is adapted from [Typed Linked Lists](http://src.codes/typed-linked-lists.html) and based on a pattern devised by Tomaka.
 
 ## Bitten tongues
 
-Nearly called that library lazr-pointer, because it is inteded to be used in the
+Nearly called that library lazr-pointer, because it is intended to be used in the
 laze.rs project.
 
 ## LICENSE
 
-Currently none, coming.
+MIT

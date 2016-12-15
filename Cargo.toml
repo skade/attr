@@ -2,6 +2,7 @@
 name = "attr"
 version = "0.1.0"
 authors = ["Florian Gilcher <florian.gilcher@asquera.de>"]
+license = "MIT"
 
 [dependencies]
 serde_json = "0.8.1"
