@@ -82,10 +82,10 @@ pub trait InsecureIterableAttr<'a, Type: ?Sized> : Attr<Type> {
 ///
 /// This trait should rarely need to be implemented yourself,
 /// but is needed to express bounds when accepting paths.
-pub trait Traverse<'a, 'b: 'a, X: ?Sized + 'b, Y: ?Sized + 'b> {
+pub trait Traverse<'a, 'b: 'a, X: 'b, Y: 'b> {
     /// implementation of the traversal for a specific path
     #[inline]
-    fn traverse(&'a self, val: X) -> Y;
+    fn traverse(&'a self, val: X) -> Result<Y>;
 }
 
 /// The Identity is the end of a path and provides the point where
@@ -162,35 +162,35 @@ pub fn retrieve_insecure<X, Z, A>(attr: A) -> InsecurePath<X, Z, A, Identity>
 
 impl<'a, 'b: 'a, T: 'b> Traverse<'a, 'b, T, T> for Identity {
     #[inline]
-    fn traverse(&'a self, val: T) -> T { val }
+    fn traverse(&'a self, val: T) -> Result<T> { Ok(val) }
 }
 
 impl<'a, 'b: 'a, X: 'b, Z: 'b, A: Attr<X>, R: Traverse<'a, 'b, A::Output, Z>> Traverse<'a, 'b, X, Z> for Path<X, Z, A, R> where <A as Attr<X>>::Output: 'b {
     #[inline]
-    fn traverse(&'a self, obj: X) -> Z {
+    fn traverse(&'a self, obj: X) -> Result<Z> {
         let val = self.attr.get(obj);
         self.next.traverse(val)
     }
 }
 
-impl<'a, 'b: 'a, X: 'b, Z: 'b, A: InsecureAttr<X>, R: Traverse<'a, 'b, A::Output, Z>> Traverse<'a, 'b, X, Result<Z>> for InsecurePath<X, Z, A, R> where <A as InsecureAttr<X>>::Output: 'b {
+impl<'a, 'b: 'a, X: 'b, Z: 'b, A: InsecureAttr<X>, R: Traverse<'a, 'b, A::Output, Z>> Traverse<'a, 'b, X, Z> for InsecurePath<X, Z, A, R> where <A as InsecureAttr<X>>::Output: 'b {
     #[inline]
     fn traverse(&'a self, obj: X) -> Result<Z> {
         let val = self.attr.get(obj);
         match val {
-            Ok(v) => Ok(self.next.traverse(v)),
+            Ok(v) => self.next.traverse(v),
             Err(_) => Err("Something went wrong".into())
         }
     }
 }
 
-impl<'a, X: 'a, Z: 'a, A: IterableAttr<'a, X>, R: Traverse<'a, 'a, A::Item, Z>> Traverse<'a, 'a, X, Box<Iterator<Item=Z> + 'a>> for MapPath<A, R> {
+impl<'a, X: 'a, Z: 'a, A: IterableAttr<'a, X>, R: Traverse<'a, 'a, A::Item, Z>> Traverse<'a, 'a, X, Box<Iterator<Item=Result<Z>> + 'a>> for MapPath<A, R> {
     #[inline]
-    fn traverse(&'a self, obj: X) -> Box<Iterator<Item=Z> + 'a> {
+    fn traverse(&'a self, obj: X) -> Result<Box<Iterator<Item=Result<Z>> + 'a>> {
         let iter = self.attr.iter(obj);
         let next = &self.next;
         let map = iter.map(move |v| next.traverse(v) );
-        Box::new(map)
+        Ok(Box::new(map))
     }
 }
 
@@ -278,11 +278,11 @@ impl<'a, 'b: 'a, X: 'b, Z: 'b, A: InsecureAttr<X>, R: Traverse<'a, 'b, A::Output
 
 impl<A, R> MapPath<A, R> {
     /// Extends a mapped path by another segment that always succeeds
-    pub fn from<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'b, NX: 'b, NY: 'b, NA>(self, attr: NA) -> Path<NX, Box<std::iter::Iterator<Item=Z> + 'a>, NA, Self>
+    pub fn from<'a, 'b: 'a, X: 'b, Y: 'b, Z: 'b, NX: 'b, NY: 'b, NA>(self, attr: NA) -> Path<NX, Box<std::iter::Iterator<Item=Result<Z>> + 'a>, NA, Self>
         where A: IterableAttr<'a, X, Item=Y>,
               R: Traverse<'a, 'b, Y, Z>,
               NA: Attr<NX, Output=NY>,
-              Self: Traverse<'a, 'b, NY, Box<std::iter::Iterator<Item=Z>>>
+              Self: Traverse<'a, 'b, NY, Box<std::iter::Iterator<Item=Result<Z>>>>
     {
         Path {
             attr: attr,

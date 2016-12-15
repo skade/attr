@@ -8,6 +8,10 @@ use test::{Bencher, black_box};
 use attr::retrieve;
 use attr::Traverse;
 
+trait Attributes<AttributeType> {
+    fn attrs() -> AttributeType;
+}
+
 #[derive(Debug)]
 pub struct Foo {
     bar: String,
@@ -24,7 +28,7 @@ pub mod foo {
     use attr::Attr;
     use attr::IndexableAttr;
     use attr::IterableAttr;
-    use attr::Attributes;
+    use super::Attributes;
 
     use super::Foo;
     use super::Bla;
@@ -156,7 +160,7 @@ pub mod foo {
 
 pub mod bla {
     use attr::Attr;
-    use attr::Attributes;
+    use super::Attributes;
 
     use super::Bla;
 
@@ -217,7 +221,7 @@ fn through_path(b: &mut Bencher) {
 }
 
 #[inline]
-fn path_access(f: &Foo) -> &str {
+fn path_access(f: &Foo) -> Result<&str, String> {
     let p = retrieve(bla::Name).from(foo::Batz);
     p.traverse(f)
 }

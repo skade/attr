@@ -35,7 +35,7 @@ fn test_multiple_attr() {
 
     let path = retrieve_insecure(attr_z).try(attr_y);
 
-    assert_eq!(path.traverse(&obj), Ok(Ok(&Value::U64(1))));
+    assert_eq!(path.traverse(&obj), Ok(&Value::U64(1)));
 }
 
 struct Foo {

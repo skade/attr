@@ -169,7 +169,7 @@ fn test_access() {
 
     let path = retrieve(foo::Vector).from(top::FooField);
 
-    assert_eq!(path.traverse(&top).len(), 2);
+    assert_eq!(path.traverse(&top).unwrap().len(), 2);
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn test_mapped() {
     let f = Foo { bar: "bar".into(), vector: vec![b1,b2] };
     let path = retrieve(bla::Name).mapped(foo::Vector);
 
-    let result = path.traverse(&f).collect::<Vec<_>>();
+    let result = path.traverse(&f).unwrap().map(std::result::Result::unwrap).collect::<Vec<_>>();
     assert_eq!(result, vec!["foo", "bla"]);
 }
 
@@ -194,6 +194,6 @@ fn test_complex_mapped() {
 
     let path = retrieve(bla::Name).mapped(foo::Vector).from(top::FooField);
 
-    let result = path.traverse(&top).collect::<Vec<_>>();
+    let result = path.traverse(&top).unwrap().map(std::result::Result::unwrap).collect::<Vec<_>>();
     assert_eq!(result, vec!["foo", "bla"]);
 }

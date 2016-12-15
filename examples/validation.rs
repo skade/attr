@@ -34,19 +34,28 @@ struct PrefixValidator<P> {
 }
 
 impl<P> PrefixValidator<P> {
-    fn validate<'a, 'b: 'a, T: 'b>(&'a self, t: T) -> bool
+    fn validate<'a, 'b: 'a, T: 'b>(&'a self, t: T) -> std::result::Result<(), String>
         where P: Traverse<'a, 'b, T, &'b str>
     {
-        self.path.traverse(t).starts_with(&self.pattern)
+        match self.path.traverse(t) {
+            Ok(s) => {
+                if s.starts_with(&self.pattern) {
+                    Ok(())
+                } else {
+                    Err(format!("Does not start with {}", self.pattern))
+                }
+            }
+            Err(reason) => Err(reason)
+        }
     }
 }
 
 fn main() {
     let user = User { data: Data { email: "flo@andersground.net".into() }};
-    assert!(validate(&user));
+    assert!(validate(&user).is_ok());
 }
 
-fn validate(u: &User) -> bool {
+fn validate(u: &User) -> std::result::Result<(), String> {
     let path = retrieve(EmailAttribute).from(DataAttribute);
     let validator = PrefixValidator { pattern: "flo".into(), path: path };
 

@@ -208,7 +208,7 @@ fn nested_access() {
 
     let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
-    let val = path.traverse(&f);
+    let val = path.traverse(&f).unwrap();
     assert_eq!(val, "foo");
 }
 
@@ -217,7 +217,7 @@ fn simple_mutable() {
     let mut f = Foo { bar: "foobar".into(), batz: Bla { name: "foo".into() }, numbers: vec![] };
 
     let path = retrieve(Foo::attrs().batz);
-    assert_eq!(path.traverse(&mut f).name, "foo");
+    assert_eq!(path.traverse(&mut f).unwrap().name, "foo");
 }
 
 #[test]
@@ -226,13 +226,13 @@ fn nested_mutable() {
 
     {
         let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
-        let x = path.traverse(&mut f);
+        let x = path.traverse(&mut f).unwrap();
         *x = "bar".into();
     }
     {
         let path = retrieve(Bla::attrs().name).from(Foo::attrs().batz);
 
-        let y = path.traverse(&f);
+        let y = path.traverse(&f).unwrap();
         assert_eq!(y, "bar");
     }
 }
@@ -270,7 +270,7 @@ fn nested_filter() {
 
     assert_eq!(size_of(&path),0);
 
-    let filtered = vec.iter().filter(|f| path.traverse(*f) == "foo" ).collect::<Vec<_>>();
+    let filtered = vec.iter().filter(|f| path.traverse(*f).unwrap() == "foo" ).collect::<Vec<_>>();
 
     assert_eq!(filtered.len(), 1);
 }
