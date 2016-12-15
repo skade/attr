@@ -176,10 +176,13 @@ To see a sketch implementation of attributes working on serde_json, refer to the
 * Unify the retrieval interface between attributes and paths, if possible
 * Find a good interface for returning results from both secure and insecure paths
 * Proper error type, giving good information about where the failure occured
+* Looping paths and conditional paths to access deep data structures
+* Missing implementations for insecure mapping
 
 ## Acknowledgements
 
 * The non-uniform List used to construct paths is adapted from [Typed Linked Lists](http://src.codes/typed-linked-lists.html) and based on a pattern devised by Tomaka.
+* The whole thing is inspired by the "kv coding" idea present in Cocoa
 
 ## Bitten tongues
 
